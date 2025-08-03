@@ -2,10 +2,11 @@
 
 namespace App\Http\Requests\Appointment;
 
+use App\Http\Requests\BaseRequestApi;
 use Illuminate\Contracts\Validation\ValidationRule;
 use App\Http\Requests\BaseRequest;
 
-class AppointmentRequest extends BaseRequest
+class AppointmentRequest extends BaseRequestApi
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,7 +24,19 @@ class AppointmentRequest extends BaseRequest
     public function rules(): array
     {
         return [
-            'address' => 'required|'
+            'address' => 'required|max:150',
+            'city' => 'required|max:150',
+            'country' => 'required|max:150',
+            'postalCode' => 'required|max:150',
+            'state' => 'required|max:150',
+            'suburb' => 'required|max:150',
+            'description' => 'max:150',
+            'email' => 'required|email|max:150',
+            'fullName' => 'required|max:150',
+            'selectedDate' => 'required',
+            'selectedTimeSlot' => 'required',
+            'totalMinutes' => 'required',
+            'lessons' => 'required|array',
         ];
     }
 }

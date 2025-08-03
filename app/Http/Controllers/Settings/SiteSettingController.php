@@ -6,6 +6,7 @@ use App\Http\Requests\Settings\SiteSettingRequest;
 use App\Services\Settings\SiteSettingService;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Foundation\Application;
+use Illuminate\Http\RedirectResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Contracts\View\View;
 
@@ -20,7 +21,11 @@ class SiteSettingController extends Controller
         return SiteSettingService::updateSettingView();
     }
 
-    public function updateSetting(SiteSettingRequest $request)
+    /**
+     * @param SiteSettingRequest $request
+     * @return RedirectResponse
+     */
+    public function updateSetting(SiteSettingRequest $request): RedirectResponse
     {
         return SiteSettingService::updateSetting($request);
     }

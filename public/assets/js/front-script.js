@@ -899,12 +899,10 @@ function submitBooking() {
             resetSelection(); // Reset the form after successful booking
         },
         error: function (xhr) {
-            const responseJSON = xhr.responseJSON;
-            console.log(responseJSON)
             // Handle errors
             let errorMessage = 'Booking failed. Please try again.';
-            if (xhr.responseJSON && xhr.responseJSON.message) {
-                errorMessage = xhr.responseJSON.message;
+            if (xhr.responseJSON && xhr.responseJSON.errors[0]) {
+                errorMessage = xhr.responseJSON.errors[0];
             }
             showToast(errorMessage, 'error');
         },

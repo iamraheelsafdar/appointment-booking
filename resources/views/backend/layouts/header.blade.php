@@ -66,6 +66,13 @@
                         {{--                        <span class="badge badge-pill badge-primary">Beta</span>--}}
                     </a>
                 </li>
+                <li class="{{request()->routeIs('availabilityView') ? 'main-active' : ''}}">
+                    <a href="{{route('availabilityView')}}">
+                        <i class="fa fa-map-marked"></i>
+                        <span>Availability</span>
+                        {{--                        <span class="badge badge-pill badge-primary">Beta</span>--}}
+                    </a>
+                </li>
                 {{--                <li class="sidebar-dropdown">--}}
                 {{--                    <a href="#">--}}
                 {{--                        <i class="fa fa-shopping-cart"></i>--}}

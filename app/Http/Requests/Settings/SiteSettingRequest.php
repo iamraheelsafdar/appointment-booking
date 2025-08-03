@@ -26,6 +26,7 @@ class SiteSettingRequest extends BaseRequest
             'logo' => 'mimes:png|max:2048',
             'title' => 'required|string|max:50',
             'copyright' => 'required|string|max:100',
+            'buffer_minutes' => 'required|min:1|max:60',
         ];
     }
 

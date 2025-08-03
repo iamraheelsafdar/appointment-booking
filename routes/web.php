@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Appointment\AppointmentController;
+use App\Http\Controllers\Availability\AvailabilityController;
 use App\Http\Controllers\Settings\SiteSettingController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Google\GoogleController;
@@ -59,6 +60,10 @@ Route::group(['middleware' => ['logs']], function () {
             Route::get('appointments', [AppointmentController::class, 'appointmentsView'])->name('appointmentsView');
             Route::get('update-appointments/{id}', [AppointmentController::class, 'updateAppointmentsView'])->name('updateAppointmentsView');
             Route::post('update-appointments', [AppointmentController::class, 'updateAppointments'])->name('updateAppointments');
+
+
+            Route::get('availability', [AvailabilityController::class, 'availabilityView'])->name('availabilityView');
+            Route::post('availability', [AvailabilityController::class, 'createAvailability'])->name('createAvailability');
 
 
             Route::prefix('google')->group(function () {

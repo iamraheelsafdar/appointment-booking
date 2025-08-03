@@ -27,6 +27,7 @@ class SiteSettingService implements SettingsInterface
         $siteSettings->update([
             'title' => $request->title,
             'copyright' => $request->copyright,
+            'buffer_minutes' => $request->buffer_minutes,
         ]);
         if ($siteSettings->logo && $request->hasFile('logo')) {
             Storage::disk('public')->delete($siteSettings->logo);
