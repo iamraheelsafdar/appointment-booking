@@ -18,6 +18,12 @@
                 <label for="email"><i class="fas fa-envelope me-2"></i>Email Address</label>
             </div>
 
+            <div class="form-floating">
+                <input type="tel" class="form-control" id="phone" name="phone" placeholder="Enter user phone number"
+                       required autocomplete="phone" value="{{ old('phone') }}">
+                <label for="phone"><i class="fas fa-phone me-2"></i>Phone Number</label>
+            </div>
+
             <button type="submit" class="btn btn-primary btn-login">
                 <i class="fas fa-plus-square me-2"></i>Add User
             </button>

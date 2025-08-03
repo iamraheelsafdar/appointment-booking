@@ -111,7 +111,7 @@
 
         <p><b>Warm regards,</b></p>
         <p><b>The Home Court Advantage Team</b></p>
-        <p>🌐 <a href="{{ env('LIVE_URL') }}" target="_blank">www.homecourtadvantage.net</a></p>
+        <p>🌐 <a href="{{ env('APP_URL') }}" target="_blank">{{ env('APP_URL') }}</a></p>
     </div>
     <div class="email-footer">
         &copy; {{ date('Y') }} Home Court Advantage. All rights reserved.

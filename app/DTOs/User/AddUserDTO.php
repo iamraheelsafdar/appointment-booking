@@ -11,6 +11,7 @@ class AddUserDTO extends BaseDTO
     public mixed $name;
     public mixed $user_type;
     public mixed $email;
+    public mixed $phone;
     public mixed $password;
     public mixed $remember_token;
 
@@ -20,6 +21,7 @@ class AddUserDTO extends BaseDTO
         $this->name = $request['name'];
         $this->user_type = 'User';
         $this->email = $request['email'];
+        $this->phone = $request['phone'];
         $this->password = Hash::make(Str::uuid()->toString());
         $this->remember_token = Str::uuid()->toString();
     }

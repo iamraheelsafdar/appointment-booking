@@ -13,4 +13,9 @@ interface AuthInterface
     public static function setPasswordView($email, $token);
 
     public static function setPassword($request);
+
+    public static function forgetPasswordView();
+
+    public static function forgetPassword($request);
+
 }

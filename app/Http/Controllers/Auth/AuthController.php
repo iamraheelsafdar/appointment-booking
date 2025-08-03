@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Http\Requests\Auth\ForgetPasswordRequest;
 use App\Http\Requests\Auth\SetPasswordRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Foundation\Application;
@@ -11,6 +12,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Contracts\View\View;
 use App\Services\Auth\AuthService;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class AuthController extends Controller
 {
@@ -52,10 +54,27 @@ class AuthController extends Controller
 
     /**
      * @param SetPasswordRequest $request
-     * @return RedirectResponse
+     * @return Response|RedirectResponse
      */
-    public function setPassword(SetPasswordRequest $request): RedirectResponse
+    public function setPassword(SetPasswordRequest $request): Response|RedirectResponse
     {
         return AuthService::setPassword($request);
+    }
+
+    /**
+     * @return \Illuminate\Contracts\Foundation\Application|Factory|View|Application
+     */
+    public function forgetPasswordView(): Factory|View|Application|\Illuminate\Contracts\Foundation\Application
+    {
+        return AuthService::forgetPasswordView();
+    }
+
+    /**
+     * @param ForgetPasswordRequest $request
+     * @return RedirectResponse
+     */
+    public function forgetPassword(ForgetPasswordRequest $request): RedirectResponse
+    {
+        return AuthService::forgetPassword($request);
     }
 }

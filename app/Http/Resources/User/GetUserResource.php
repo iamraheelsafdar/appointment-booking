@@ -17,10 +17,12 @@ class GetUserResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'reference' => $this->name,
-            'status' => $this->email,
+            'name' => $this->name,
+            'email' => $this->email,
+            'status' => $this->status == 1 ? 'active' : 'inactive',
             'last_login' => $this->last_login ? Carbon::parse($this->last_login)->diffForHumans() : '-',
             'registration_date' => $this->created_at->format('d-m-Y'),
+            'phone' => $this->phone
         ];
     }
 }

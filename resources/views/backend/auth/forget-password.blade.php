@@ -7,7 +7,8 @@
                 <h4>Please enter your Email</h4>
             </div>
 
-            <form >
+            <form action="{{route('forgetPassword')}}" method="POST">
+                @csrf
                 <div class="form-floating">
                     <input type="email" autocomplete="email" class="form-control" id="email" name="email"
                            placeholder="Enter your email" required>

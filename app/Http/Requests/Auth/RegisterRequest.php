@@ -25,6 +25,7 @@ class RegisterRequest extends BaseRequest
         return [
             'email' => 'required|email|unique:users,email',
             'name' => 'required|min:3|max:255',
+            'phone' => ['required', 'regex:/^[0-9\s\-\+\(\)]{10,20}$/'],
         ];
     }
 }

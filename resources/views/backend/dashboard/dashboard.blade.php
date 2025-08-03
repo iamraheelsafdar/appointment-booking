@@ -25,6 +25,11 @@
                     <h5 class="card-title ms-1">Total Appointments</h5>
                     <p class="card-text mb-5 ms-1">5</p>
 
+                    <a href="{{route('redirectToGoogle')}}" target="_blank"
+                       class="button mb-1 mt-1 ">google</a>
+
+                    <a href="https://freesnippetcode.blogspot.com/" target="_blank"
+                       class="button mb-1 mt-1 ">Go now</a>
                     <a href="https://freesnippetcode.blogspot.com/" target="_blank"
                        class="button mb-1 mt-1 ">Go now</a>
                 </div>

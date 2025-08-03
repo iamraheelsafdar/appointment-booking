@@ -2,14 +2,20 @@
 
 namespace App\Services\Auth;
 
+use App\Helper;
+use App\Jobs\ForgetPasswordJob;
+use App\Jobs\PasswordChangedJob;
 use Illuminate\Contracts\Foundation\Application;
 use App\Interfaces\Auth\AuthInterface;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Contracts\View\View;
 use App\Models\User;
+use Illuminate\Support\Str;
 
 class AuthService implements AuthInterface
 {
@@ -29,6 +35,12 @@ class AuthService implements AuthInterface
     {
         $credentials = $request->only('email', 'password');
         $rememberMe = $request->boolean('remember_me');
+        $userStatus = User::where('email', $request->email)->where('status', 1)->exists();
+        if (!$userStatus) {
+            session()->flash('errors', 'Your account is not active');
+            return redirect()->back();
+        }
+
         $login = Auth::attempt($credentials, $rememberMe);
         if (!$login) {
             session()->flash('errors', 'Invalid credentials');
@@ -64,17 +76,45 @@ class AuthService implements AuthInterface
 
     /**
      * @param $request
-     * @return RedirectResponse
+     * @return Response|RedirectResponse
      */
-    public static function setPassword($request): RedirectResponse
+    public static function setPassword($request): Response|RedirectResponse
     {
-        User::where('email', $request->email)->where('remember_token', $request->token)
-            ->update([
+        try {
+            $user = tap(User::where('email', $request->email)
+                ->where('remember_token', $request->token)
+                ->firstOrFail())->update([
                 'remember_token' => null,
                 'status' => 1,
-                'password' => Hash::make($request->password)
+                'password' => Hash::make($request->password),
+                'email_verified_at' => now()
             ]);
-        session()->flash('success', 'Your password set successfully please login');
-        return redirect()->route('login');
+            PasswordChangedJob::dispatch($user);
+            session()->flash('success', 'Your password set successfully please login');
+            return redirect()->route('login');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            session()->flash('error', "Something went wrong");
+            return Helper::errorHandling($request, $e, __FUNCTION__);
+        }
+    }
+
+    /**
+     * @return Factory|\Illuminate\Foundation\Application|View|Application
+     */
+    public static function forgetPasswordView(): Factory|\Illuminate\Foundation\Application|View|Application
+    {
+        return view('backend.auth.forget-password');
+    }
+
+    public static function forgetPassword($request): RedirectResponse
+    {
+        $user = User::where('email', $request->email)->first();
+        $user->update([
+            'remember_token' => Str::uuid()->toString()
+        ]);
+        ForgetPasswordJob::dispatch($user);
+        session()->flash('success', 'If an account exists with a given email we will send you password set mail');
+        return redirect()->route('forgetPassword');
     }
 }

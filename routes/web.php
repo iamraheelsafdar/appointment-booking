@@ -1,6 +1,10 @@
 <?php
 
+use App\Http\Controllers\Appointment\AppointmentController;
+use App\Http\Controllers\Settings\SiteSettingController;
 use App\Http\Controllers\Dashboard\DashboardController;
+use App\Http\Controllers\Google\GoogleController;
+use App\Http\Controllers\Site\FrontEndController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\User\UserController;
 use Illuminate\Support\Facades\Route;
@@ -18,9 +22,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::group(['middleware' => ['logs']], function () {
 
-    Route::get('/test', function (){
-       return view('backend.mail.invite-user' , ['user' => '1']);
-    });
+    Route::get('/', [FrontEndController::class, 'frontendView'])->name('frontendView');
 
     Route::prefix('dashboard')->group(function () {
 
@@ -28,26 +30,43 @@ Route::group(['middleware' => ['logs']], function () {
         Route::post('/login', [AuthController::class, 'login'])->name('login');
 
 
-        Route::get('/forget-password', function () {
-            return view('backend.auth.forget-password');
-        })->name('forgetPassword');
-
-
+        Route::get('/forget-password', [AuthController::class, 'forgetPasswordView'])->name('forgetPasswordView');
         Route::get('/set-password/{email}/{token}', [AuthController::class, 'setPasswordView'])->name('setPasswordView');
 
         Route::post('/set-password', [AuthController::class, 'setPassword'])->name('setPassword');
+        Route::post('/forget-password', [AuthController::class, 'forgetPassword'])->name('forgetPassword');
 
 
+        Route::group(['middleware' => ['auth']], function () {
 
-    });
+            Route::get('/', [DashboardController::class, 'dashboard'])->name('dashboard');
+            Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    Route::group(['middleware' => ['auth']], function () {
-        Route::get('/', [DashboardController::class, 'dashboard'])->name('dashboard');
-        Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
+            Route::get('/register', [UserController::class, 'registerView'])->name('registerView');
+            Route::post('/register', [UserController::class, 'register'])->name('register');
+            Route::get('/get-user', [UserController::class, 'getUser'])->name('getUser');
+            Route::get('/update-user/{id}', [UserController::class, 'updateUserView'])->name('updateUserView');
+            Route::post('/update-user', [UserController::class, 'updateUser'])->name('updateUser');
 
-        Route::get('/register', [UserController::class, 'registerView'])->name('registerView');
-        Route::post('/register', [UserController::class, 'register'])->name('register');
-        Route::get('/get-user', [UserController::class, 'getUser'])->name('getUser');
+            Route::get('/update-profile', [UserController::class, 'updateProfileView'])->name('updateProfileView');
+            Route::post('/update-profile', [UserController::class, 'updateProfile'])->name('updateProfile');
+
+            Route::get('/update-setting', [SiteSettingController::class, 'updateSettingView'])->name('updateSettingView');
+            Route::post('/update-setting', [SiteSettingController::class, 'updateSetting'])->name('updateSetting');
+
+            Route::post('/delete-user', [UserController::class, 'deleteUser'])->name('deleteUser');
+
+            Route::get('appointments', [AppointmentController::class, 'appointmentsView'])->name('appointmentsView');
+            Route::get('update-appointments/{id}', [AppointmentController::class, 'updateAppointmentsView'])->name('updateAppointmentsView');
+            Route::post('update-appointments', [AppointmentController::class, 'updateAppointments'])->name('updateAppointments');
+
+
+            Route::prefix('google')->group(function () {
+                Route::get('/redirect', [GoogleController::class, 'redirectToGoogle'])->name('redirectToGoogle');
+                Route::get('/callback', [GoogleController::class, 'handleGoogleCallback'])->name('handleGoogleCallback');
+            });
+
+        });
 
     });
 });

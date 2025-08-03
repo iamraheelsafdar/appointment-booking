@@ -4,26 +4,28 @@
 <nav id="sidebar" class="sidebar-wrapper">
     <div class="sidebar-content">
         <div class="sidebar-brand">
-            <a href="#">pro sidebar BS5</a>
+            <a href="#">{{ isset($siteSetting) && $siteSetting->title ? $siteSetting->title : 'Site Title' }}</a>
             <div id="close-sidebar">
                 <i class="fas fa-times"></i>
             </div>
         </div>
-        <div class="sidebar-header">
-            <div class="user-pic">
-                <img class="img-responsive img-rounded"
-                     src="{{asset('assets/img/profileImage.png')}}"
-                     alt="User picture">
-            </div>
-            <div class="user-info">
-                <span class="user-name">{{ucfirst(auth()->user()->name)}}</span>
-                <span class="user-role">{{ucfirst(auth()->user()->user_type)}}</span>
-                <span class="user-status">
+        <a href="{{route('updateProfileView')}}">
+            <div class="sidebar-header">
+                <div class="user-pic">
+                    <img class="img-responsive img-rounded"
+                         src="{{  auth()->user()->profile_image ? asset('storage/' . auth()->user()->profile_image) : asset('assets/img/profileImage.png') }}"
+                         alt="User picture">
+                </div>
+                <div class="user-info">
+                    <span class="user-name">{{ucfirst(auth()->user()->name)}}</span>
+                    <span class="user-role">{{ucfirst(auth()->user()->user_type)}}</span>
+                    <span class="user-status">
             <i class="fa fa-circle"></i>
             <span>Online</span>
           </span>
+                </div>
             </div>
-        </div>
+        </a>
         <!-- sidebar-header  -->
         <div class="sidebar-menu">
             <ul>
@@ -56,6 +58,13 @@
                             </li>
                         </ul>
                     </div>
+                </li>
+                <li class="{{request()->routeIs('appointmentsView') ? 'main-active' : ''}}">
+                    <a href="{{route('appointmentsView')}}">
+                        <i class="fa fa-tasks"></i>
+                        <span>Appointments</span>
+                        {{--                        <span class="badge badge-pill badge-primary">Beta</span>--}}
+                    </a>
                 </li>
                 {{--                <li class="sidebar-dropdown">--}}
                 {{--                    <a href="#">--}}
@@ -178,10 +187,12 @@
             <i class="fa fa-envelope"></i>
             <span class="badge badge-pill badge-success notification">7</span>
         </a>
-        <a href="#">
-            <i class="fa fa-cog"></i>
-            <span class="badge-sonar"></span>
-        </a>
+        @if(auth()->user()->user_type == 'Admin' )
+            <a href="{{route('updateSettingView')}}">
+                <i class="fa fa-cog"></i>
+                <span class="badge-sonar"></span>
+            </a>
+        @endif
         <a href="{{route('logout')}}">
             <i class="fa fa-power-off"></i>
         </a>
