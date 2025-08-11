@@ -2,9 +2,9 @@
 
 namespace App\Services\Availability;
 
-use App\DTOs\Availability\SetAvailability;
 use App\Interfaces\Availability\AvailabilityInterface;
 use Illuminate\Contracts\Foundation\Application;
+use App\DTOs\Availability\SetAvailability;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Contracts\View\View;
@@ -17,7 +17,7 @@ class AvailabilityService implements AvailabilityInterface
      */
     public static function availabilityView(): Factory|View|\Illuminate\Foundation\Application|Application
     {
-        $availability = Availability::all()->toArray();
+        $availability = Availability::where('availability' , 1)->get()->toArray();
         $detail = [];
         foreach ($availability as $key => $value) {
             $detail[$value['day']] = ['start_time' => date('H:i', strtotime($value['start_time'])), 'end_time' => date('H:i', strtotime($value['end_time']))];
@@ -35,14 +35,22 @@ class AvailabilityService implements AvailabilityInterface
         $days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
         foreach ($days as $day) {
-            if ($request->has($day)) {
+            if ($request->boolean($day)) {
                 $startTime = $request->input("{$day}_start_time");
-                $endTime = $request->input("{$day}_end_time");
-
+                $endTime   = $request->input("{$day}_end_time");
                 if ($startTime && $endTime && $endTime > $startTime) {
-                    Availability::updateOrcreate(['day' => ucfirst($day)],
-                        (new SetAvailability($day, $startTime, $endTime))->toArray());
+                    // Update or create availability for selected day
+                    Availability::updateOrCreate(
+                        ['day' => ucfirst($day)],
+                        (new SetAvailability($day, $startTime, $endTime))->toArray()
+                    );
                 }
+            } else {
+                // Mark availability off for unselected days
+                Availability::updateOrCreate(
+                    ['day' => ucfirst($day)],
+                    ['availability' => 0]
+                );
             }
         }
         session()->flash('success', 'Availability set successfully');

@@ -22,7 +22,8 @@ class GetUserResource extends JsonResource
             'status' => $this->status == 1 ? 'active' : 'inactive',
             'last_login' => $this->last_login ? Carbon::parse($this->last_login)->diffForHumans() : '-',
             'registration_date' => $this->created_at->format('d-m-Y'),
-            'phone' => $this->phone
+            'phone' => $this->phone,
+            'coach_type' => $this->coach_type,
         ];
     }
 }

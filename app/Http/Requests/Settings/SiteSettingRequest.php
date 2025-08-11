@@ -27,6 +27,7 @@ class SiteSettingRequest extends BaseRequest
             'title' => 'required|string|max:50',
             'copyright' => 'required|string|max:100',
             'buffer_minutes' => 'required|min:1|max:60',
+            'slot_difference' => 'required|min:1|max:60',
         ];
     }
 

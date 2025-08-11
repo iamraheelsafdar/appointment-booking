@@ -1,8 +1,7 @@
 <?php
 
-use App\Http\Controllers\Appointment\AppointmentController;
+use App\Http\Controllers\Site\FrontEndController;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,5 +15,8 @@ use Illuminate\Http\Request;
 */
 
 Route::group(['middleware' => ['logs']], function () {
-    Route::post('book-appointment', [AppointmentController::class, 'bookAppointment']);
+    Route::post('book-appointment', [FrontEndController::class, 'bookAppointment']);
+
+    Route::post('stripe-webhook', [FrontEndController::class, 'handleWebhook']);
+    Route::post('test', [FrontEndController::class, 'test']);
 });

@@ -12,7 +12,10 @@ return new class extends Migration {
     {
         Schema::create('appointments', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('coach_id')->nullable();
+            $table->foreign('coach_id')->references('id')->on('users')->onDelete('cascade');
             $table->string('booking_id')->nullable();
+            $table->string('google_event_id')->nullable();
             $table->string('name')->nullable();
             $table->string('email')->nullable();
             $table->string('suburb')->nullable();
@@ -20,6 +23,7 @@ return new class extends Migration {
             $table->string('city')->nullable();
             $table->string('country')->nullable();
             $table->string('postal_code')->nullable();
+            $table->string('player_type')->nullable();
             $table->string('state')->nullable();
             $table->string('selected_date')->nullable();
             $table->string('selected_time_slot')->nullable();

@@ -22,7 +22,7 @@ class AvailabilityController extends Controller
     }
 
     /**
-     * @param AvailabilityRequest $request
+     * @param Request $request
      * @return RedirectResponse
      */
     public function createAvailability(Request $request): RedirectResponse

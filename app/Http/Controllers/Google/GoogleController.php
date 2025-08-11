@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Google;
 
 use App\Http\Controllers\Controller;
+use App\Models\Google;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Google_Service_Calendar;
@@ -16,12 +17,13 @@ class GoogleController extends Controller
         $client = new Google_Client();
         $client->setClientId(env('GOOGLE_CLIENT_ID'));
         $client->setClientSecret(env('GOOGLE_CLIENT_SECRET'));
-        $client->setRedirectUri('http://127.0.0.1:8000/google/callback');
+        $client->setRedirectUri(env('GOOGLE_REDIRECT_URL'));
         $client->setAccessType('offline');
         $client->setPrompt('consent');
         $client->setScopes([
             Google_Service_Calendar::CALENDAR,
             Google_Service_Oauth2::USERINFO_EMAIL,
+            Google_Service_Oauth2::USERINFO_PROFILE,
         ]);
         return $client;
     }
@@ -47,10 +49,21 @@ class GoogleController extends Controller
         $userInfo = $googleService->userinfo->get();
 
         // Save token to user (in DB)
-        $user = Auth::user();
-        $user->google_access_token = json_encode($token);
-        $user->google_email = $userInfo->email;
-        $user->save();
+        Google::updateOrCreate(['user_id' => auth()->user()->id],
+            [
+                'access_token' => $token['access_token'],
+                'expires_in' => $token['expires_in'],
+                'refresh_token' => $token['refresh_token'] ?? null,
+                'scope' => $token['scope'],
+                'token_created' => $token['created'],
+                'token_type' => $token['token_type'],
+                'id_token' => $token['id_token'],
+                'name' => $userInfo->name,
+                'picture' => $userInfo->picture,
+                'email' => $userInfo->email,
+                'refresh_token_expires_in' => $token['refresh_token_expires_in'] ?? null,
+            ]
+        );
 
         return redirect()->route('dashboard')->with('success', 'Google Calendar connected!');
     }

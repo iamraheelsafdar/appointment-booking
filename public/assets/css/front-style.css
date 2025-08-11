@@ -133,6 +133,7 @@ body {
 
 .other-month {
     background-color: #f8f9fa;
+    cursor: not-allowed;
 }
 
 .calendar-date.disabled {
@@ -254,6 +255,7 @@ body {
 .time-slot.available {
     border-color: #34a853;
     color: #137333;
+    align-self: center;
 }
 
 .time-slot.available:hover {
@@ -625,6 +627,48 @@ body {
 }
 
 /* Toast Styles */
+/*.toast {*/
+/*    border: none;*/
+/*    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);*/
+/*    border-left: 4px solid transparent;*/
+/*}*/
+
+/*.toast.bg-success {*/
+/*    border-left-color: #198754;*/
+/*}*/
+
+/*.toast.bg-danger {*/
+/*    border-left-color: #dc3545;*/
+/*}*/
+
+/*.toast.bg-warning {*/
+/*    border-left-color: #ffc107;*/
+/*}*/
+
+/*.toast.bg-info {*/
+/*    border-left-color: #0dcaf0;*/
+/*}*/
+
+/*.toast-header {*/
+/*    border-bottom: 1px solid rgba(255, 255, 255, 0.2);*/
+/*}*/
+
+/*.toast.bg-success .toast-header,*/
+/*.toast.bg-danger .toast-header,*/
+/*.toast.bg-info .toast-header {*/
+/*    color: white;*/
+/*    background-color: rgba(0, 0, 0, 0.15);*/
+/*}*/
+
+/*.toast.bg-warning .toast-header {*/
+/*    background-color: rgba(0, 0, 0, 0.05);*/
+/*}*/
+
+/*.toast-body {*/
+/*    padding: 10px 12px;*/
+/*    font-size: 0.95rem;*/
+/*}*/
+
 .toast {
     border: none;
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
@@ -633,38 +677,25 @@ body {
 
 .toast.bg-success {
     border-left-color: #198754;
+    background-color: #198754 !important;
+    color: #fff;
 }
 
 .toast.bg-danger {
     border-left-color: #dc3545;
-}
-
-.toast.bg-warning {
-    border-left-color: #ffc107;
-}
-
-.toast.bg-info {
-    border-left-color: #0dcaf0;
+    background-color: #dc3545 !important;
+    color: #fff;
 }
 
 .toast-header {
+    background-color: rgba(255, 255, 255, 0.1);
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
 }
 
-.toast.bg-success .toast-header,
-.toast.bg-danger .toast-header,
-.toast.bg-info .toast-header {
-    color: white;
-    background-color: rgba(0, 0, 0, 0.15);
-}
-
-.toast.bg-warning .toast-header {
-    background-color: rgba(0, 0, 0, 0.05);
-}
-
-.toast-body {
-    padding: 10px 12px;
-    font-size: 0.95rem;
+.toast-icon {
+    font-size: 0.8rem;
+    color: currentColor;
 }
 
 @keyframes fadeIn {

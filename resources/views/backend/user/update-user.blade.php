@@ -1,9 +1,9 @@
 @extends('backend.layouts.app')
-@section('title', 'Update User')
+@section('title', 'Update Coach')
 @section('backend')
     <div class="mw-100 login-card ">
 
-        <form id="loginForm" action="{{ route('updateAppointments') }}" method="POST">
+        <form id="loginForm" action="{{ route('updateUser') }}" method="POST">
             @csrf
             <input type="hidden" name="id" value="{{ $user['id'] }}">
             <div class="form-floating">
@@ -23,6 +23,9 @@
                        required autocomplete="phone" value="{{ $user['phone'] }}">
                 <label for="phone"><i class="fas fa-phone me-2"></i>Phone Number</label>
             </div>
+
+
+
             <div class="form-floating">
                 <select class="form-control" aria-label="Default select example" id="status"
                         name="status" {{$user['remember_token'] == null ? '' : 'disabled' }}>
@@ -32,6 +35,18 @@
                 </select>
                 <label for="status"><i class="fas fa-arrow-up me-2"></i>Update Status</label>
             </div>
+
+            <div class="form-floating">
+                <select class="form-control" aria-label="Default select example" id="coach_type"
+                        name="coach_type">
+                    <option value="{{$user['coach_type']}}">{{$user['coach_type']}}</option>
+                    <option value="Normal Coach">Normal Coach</option>
+                    <option value="High Level Coach">High Level Coach</option>
+                </select>
+                <label for="status"><i class="fas fa-arrow-up me-2"></i>Update Coach Type</label>
+            </div>
+
+
             <button type="submit" class="btn btn-primary btn-login primary">
                 <i class="fas fa-upload me-2"></i>Update User
             </button>

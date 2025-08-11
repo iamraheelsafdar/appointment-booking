@@ -28,6 +28,19 @@
                 </select>
                 <label for="status"><i class="fas fa-arrow-up me-2"></i>Update Status</label>
             </div>
+
+            <div class="form-floating">
+                <select class="form-control" aria-label="Default select example" id="assign_to"
+                        name="assign_to">
+
+                    <option value="{{$appointment->coach->id}}" selected>{{$appointment->coach->name ?? ''}}</option>
+                    @foreach($users as $name => $id)
+                        <option value="{{$id}}">{{$name}}</option>
+                    @endforeach
+                </select>
+                <label for="assign_to"><i class="fas fa-tasks me-2"></i>Assign appointment to</label>
+            </div>
+
             <button type="submit" class="btn btn-primary btn-login primary">
                 <i class="fas fa-upload me-2"></i>Update Appointment
             </button>

@@ -1,5 +1,5 @@
 @extends('backend.layouts.app')
-@section('title', 'Users')
+@section('title', 'Coach')
 @section('backend')
     <form method="GET" action="{{ url()->current() }}" class="row g-3 mb-4">
         <div class="col-md-4">
@@ -19,6 +19,7 @@
                 <th>ID</th>
                 <th>Name</th>
                 <th>Email</th>
+                <th>Coach Type</th>
                 <th>Phone</th>
                 <th>Status</th>
                 <th>Last Login</th>
@@ -32,6 +33,7 @@
                     <td>{{ ($users['current_page'] - 1) * $users['per_page'] + $key + 1 }}</td>
                     <td>{{ $user['name'] }}</td>
                     <td>{{ $user['email'] }}</td>
+                    <td>{{ $user['coach_type'] }}</td>
                     <td>{{ $user['phone'] }}</td>
                     <td class="text-uppercase">
                     <span class="badge {{ $user['status'] == 'active' ? 'bg-success' : 'bg-danger'}} ">
@@ -53,7 +55,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="8" class="text-center">No users found.</td>
+                    <td colspan="9" class="text-center">No users found.</td>
                 </tr>
             @endforelse
             </tbody>

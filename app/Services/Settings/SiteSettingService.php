@@ -7,6 +7,7 @@ use App\Models\SiteSettings;
 use Illuminate\Foundation\Application;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -21,13 +22,21 @@ class SiteSettingService implements SettingsInterface
         return view('backend.settings.setting');
     }
 
-    public static function updateSetting($request)
+    /**
+     * @param $request
+     * @return RedirectResponse
+     */
+    public static function updateSetting($request): RedirectResponse
     {
+        if ($request->buffer_minutes != $request->slot_difference){
+            return redirect()->back()->with('errors', 'Buffer minutes and slot difference should be same.');
+        }
         $siteSettings = SiteSettings::firstOrCreate(['id' => 1]);
         $siteSettings->update([
             'title' => $request->title,
             'copyright' => $request->copyright,
             'buffer_minutes' => $request->buffer_minutes,
+            'slot_difference' => $request->slot_difference,
         ]);
         if ($siteSettings->logo && $request->hasFile('logo')) {
             Storage::disk('public')->delete($siteSettings->logo);

@@ -13,7 +13,7 @@
             <div class="sidebar-header">
                 <div class="user-pic">
                     <img class="img-responsive img-rounded"
-                         src="{{  auth()->user()->profile_image ? asset('storage/' . auth()->user()->profile_image) : asset('assets/img/profileImage.png') }}"
+                         src="{{  auth()->user()?->google?->picture ? auth()->user()->google->picture : (auth()->user()->profile_image ? asset('storage/' . auth()->user()->profile_image) : asset('assets/img/profileImage.png')) }}"
                          alt="User picture">
                 </div>
                 <div class="user-info">
@@ -39,26 +39,28 @@
                         {{--                        <span class="badge badge-pill badge-primary">Beta</span>--}}
                     </a>
                 </li>
-                <li class="sidebar-dropdown {{request()->routeIs('registerView', 'getUser') ? 'active' : ''}}">
-                    <a href="#">
-                        <i class="fa fa-user-alt"></i>
-                        <span>Users</span>
-                        {{--                        <span class="badge badge-pill badge-warning">New</span>--}}
-                    </a>
-                    <div class="sidebar-submenu"
-                         style="display:{{request()->routeIs('registerView', 'getUser') ? 'block' : ''}};">
-                        <ul>
-                            <li class="{{request()->routeIs('registerView') ? 'active' : ''}}">
-                                <a href="{{route('registerView')}}">Add User
-                                    {{--                                    <span class="badge badge-pill badge-success">Pro</span>--}}
-                                </a>
-                            </li>
-                            <li class="{{request()->routeIs('getUser') ? 'active' : ''}}">
-                                <a href="{{route('getUser')}}">View Users</a>
-                            </li>
-                        </ul>
-                    </div>
-                </li>
+                @if(auth()->user()->user_type == 'Admin' )
+                    <li class="sidebar-dropdown {{request()->routeIs('registerView', 'getUser') ? 'active' : ''}}">
+                        <a href="#">
+                            <i class="fa fa-user-alt"></i>
+                            <span>Coaches</span>
+                            {{--                        <span class="badge badge-pill badge-warning">New</span>--}}
+                        </a>
+                        <div class="sidebar-submenu"
+                             style="display:{{request()->routeIs('registerView', 'getUser') ? 'block' : ''}};">
+                            <ul>
+                                <li class="{{request()->routeIs('registerView') ? 'active' : ''}}">
+                                    <a href="{{route('registerView')}}">Add Coach
+                                        {{--                                    <span class="badge badge-pill badge-success">Pro</span>--}}
+                                    </a>
+                                </li>
+                                <li class="{{request()->routeIs('getUser') ? 'active' : ''}}">
+                                    <a href="{{route('getUser')}}">View Coach</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                @endif
                 <li class="{{request()->routeIs('appointmentsView') ? 'main-active' : ''}}">
                     <a href="{{route('appointmentsView')}}">
                         <i class="fa fa-tasks"></i>
@@ -66,13 +68,22 @@
                         {{--                        <span class="badge badge-pill badge-primary">Beta</span>--}}
                     </a>
                 </li>
-                <li class="{{request()->routeIs('availabilityView') ? 'main-active' : ''}}">
-                    <a href="{{route('availabilityView')}}">
-                        <i class="fa fa-map-marked"></i>
-                        <span>Availability</span>
-                        {{--                        <span class="badge badge-pill badge-primary">Beta</span>--}}
-                    </a>
-                </li>
+                @if(auth()->user()->user_type == 'Admin' )
+                    <li class="{{request()->routeIs('transactionView') ? 'main-active' : ''}}">
+                        <a href="{{route('transactionView')}}">
+                            <i class="fa fa-cash-register"></i>
+                            <span>Transactions</span>
+                            {{--                        <span class="badge badge-pill badge-primary">Beta</span>--}}
+                        </a>
+                    </li>
+                    <li class="{{request()->routeIs('availabilityView') ? 'main-active' : ''}}">
+                        <a href="{{route('availabilityView')}}">
+                            <i class="fa fa-map-marked"></i>
+                            <span>Availability</span>
+                            {{--                        <span class="badge badge-pill badge-primary">Beta</span>--}}
+                        </a>
+                    </li>
+                @endif
                 {{--                <li class="sidebar-dropdown">--}}
                 {{--                    <a href="#">--}}
                 {{--                        <i class="fa fa-shopping-cart"></i>--}}
@@ -186,14 +197,14 @@
     </div>
     <!-- sidebar-content  -->
     <div class="sidebar-footer">
-        <a href="#">
-            <i class="fa fa-bell"></i>
-            <span class="badge badge-pill badge-warning notification">3</span>
-        </a>
-        <a href="#">
-            <i class="fa fa-envelope"></i>
-            <span class="badge badge-pill badge-success notification">7</span>
-        </a>
+{{--        <a href="#">--}}
+{{--            <i class="fa fa-bell"></i>--}}
+{{--            <span class="badge badge-pill badge-warning notification">3</span>--}}
+{{--        </a>--}}
+{{--        <a href="#">--}}
+{{--            <i class="fa fa-envelope"></i>--}}
+{{--            <span class="badge badge-pill badge-success notification">7</span>--}}
+{{--        </a>--}}
         @if(auth()->user()->user_type == 'Admin' )
             <a href="{{route('updateSettingView')}}">
                 <i class="fa fa-cog"></i>

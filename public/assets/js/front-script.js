@@ -1,9 +1,13 @@
 // Admin settings - Dynamic time intervals
 const adminSettings = {
-    availableDays: [1, 2, 3, 4, 5], // Monday to Friday (0=Sunday, 6=Saturday)
-    startTime: "08:00",
-    endTime: "17:00",
-    timeInterval: 15, // Dynamic interval in minutes
+    // availableDays: [1, 2, 3, 4, 5], // Monday to Friday (0=Sunday, 6=Saturday)
+    // startTime: "08:00",
+    // endTime: "17:00",
+    timeInterval: window.slotDifference, // Dynamic interval in minutes
+
+    dailySchedule: window.availablity,
+
+
     bookedSlots: window.bookedSlots
 };
 
@@ -45,7 +49,7 @@ let selectedTime = null;
 let lessons = [];
 let currentStep = 1;
 let lessonIdCounter = 1;
-
+let isFreeTrial = false;
 const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
@@ -89,7 +93,9 @@ function createDateElement(date, currentMonth) {
 
     const isCurrentMonth = date.getMonth() === currentMonth;
     const isToday = isDateToday(date);
-    const isAvailable = isDateAvailable(date);
+    // const isAvailable = isDateAvailable(date);
+    const dayOfWeek = date.getDay();
+    const isAvailable = adminSettings.dailySchedule[dayOfWeek] !== undefined;
     const isPast = date < new Date().setHours(0, 0, 0, 0);
 
     if (!isCurrentMonth) {
@@ -110,6 +116,7 @@ function createDateElement(date, currentMonth) {
     dateElement.appendChild(dateNumber);
 
     // Add availability indicator for current month dates
+    // Add availability indicator for current month dates
     if (isCurrentMonth && !isPast) {
         const indicator = document.createElement('div');
         indicator.className = 'availability-indicator';
@@ -117,7 +124,12 @@ function createDateElement(date, currentMonth) {
         if (isAvailable) {
             const dateStr = formatDate(date);
             const bookedCount = adminSettings.bookedSlots[dateStr]?.length || 0;
-            const totalSlots = getTotalSlots();
+
+            // Use daily schedule to calculate total slots
+            const daySchedule = adminSettings.dailySchedule[dayOfWeek];
+            const start = timeToMinutes(daySchedule.startTime);
+            const end = timeToMinutes(daySchedule.endTime);
+            const totalSlots = Math.floor((end - start) / adminSettings.timeInterval);
 
             if (bookedCount === 0) {
                 indicator.classList.add('available');
@@ -150,7 +162,7 @@ function isDateToday(date) {
 
 function isDateAvailable(date) {
     const dayOfWeek = date.getDay();
-    return adminSettings.availableDays.includes(dayOfWeek);
+    return adminSettings.dailySchedule[dayOfWeek] !== undefined;
 }
 
 function formatDate(date) {
@@ -159,9 +171,14 @@ function formatDate(date) {
         String(date.getDate()).padStart(2, '0');
 }
 
-function getTotalSlots() {
-    const start = timeToMinutes(adminSettings.startTime);
-    const end = timeToMinutes(adminSettings.endTime);
+function getTotalSlots(date) {
+    const dayOfWeek = date.getDay();
+    const daySchedule = adminSettings.dailySchedule[dayOfWeek];
+
+    if (!daySchedule) return 0;
+
+    const start = timeToMinutes(daySchedule.startTime);
+    const end = timeToMinutes(daySchedule.endTime);
     return Math.floor((end - start) / adminSettings.timeInterval);
 }
 
@@ -171,8 +188,10 @@ function timeToMinutes(time) {
 }
 
 function minutesToTime(minutes) {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
+    // Normalize to same-day clock (0-1439)
+    const normalized = ((minutes % 1440) + 1440) % 1440;
+    const hours = Math.floor(normalized / 60);
+    const mins = normalized % 60;
     return String(hours).padStart(2, '0') + ':' + String(mins).padStart(2, '0');
 }
 
@@ -215,9 +234,22 @@ function showTimeSlots(date) {
 
     timeSlots.innerHTML = '';
 
-    const startMinutes = timeToMinutes(adminSettings.startTime);
-    const endMinutes = timeToMinutes(adminSettings.endTime);
+    // Get day of week (0=Sunday, 1=Monday, etc.)
+    const dayOfWeek = date.getDay();
 
+    // Get schedule for this day
+    const daySchedule = adminSettings.dailySchedule[dayOfWeek];
+
+    if (!daySchedule) {
+        timeSlots.innerHTML = '<div class="text-center p-4">No available times for this day</div>';
+        return;
+    }
+
+    // Use day-specific schedule instead of global settings
+    const startMinutes = timeToMinutes(daySchedule.startTime);
+    const endMinutes = timeToMinutes(daySchedule.endTime);
+
+    // Generate time slots using day-specific schedule
     for (let minutes = startMinutes; minutes < endMinutes; minutes += adminSettings.timeInterval) {
         const timeStr = minutesToTime(minutes);
         const slot = createTimeSlot(timeStr, bookedSlots.includes(timeStr));
@@ -272,9 +304,41 @@ function selectTime(time, element) {
     updateAllCalculations();
 }
 
+function clearTimeSelection() {
+    // Clear variable state
+    selectedTime = null;
+
+    // Clear selected visual state
+    const sel = document.querySelector('.time-slot.selected');
+    if (sel) sel.classList.remove('selected');
+
+    // Hide the stepper form
+    const stepper = document.getElementById('stepperForm');
+    if (stepper) stepper.style.display = 'none';
+
+    // Clear hidden fields so nothing stale remains
+    const ids = ['selectedTimeSlot', 'totalMinutes', 'bookingTotalPrice', 'bookingSummary', 'totalAmount'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+
+    // Keep the time panel visible and bring it into view for re-selection
+    const timePanel = document.getElementById('timePanel');
+    if (timePanel && timePanel.scrollIntoView) {
+        timePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
 // Stepper Functions
 function nextStep() {
     if (currentStep === 1) {
+        const timeOk = selectedTime && updateFinalTime();
+        if (!timeOk) {
+            showToast('danger', 'Select a valid time', 'Please select an available time slot that fits within the day.');
+            clearTimeSelection(); // <-- ensure variables and UI are reset so user can reselect
+            return;
+        }
         // Validate step 1
         if (!validateStep1()) {
             return;
@@ -393,10 +457,11 @@ function validateStep1() {
     if (!postalCode) {
         errorMessages.push('Postal code is required');
         isValid = false;
-    } else if (!/^\d{5}$/.test(postalCode)) {
-        errorMessages.push('Postal code must be 5 digits');
-        isValid = false;
     }
+    // else if (!/^\d{5}$/.test(postalCode)) {
+    //     errorMessages.push('Postal code must be 5 digits');
+    //     isValid = false;
+    // }
 
     // Validate lessons
     lessons.forEach(lesson => {
@@ -407,9 +472,7 @@ function validateStep1() {
     });
 
     if (!isValid) {
-        // Instead of:
-// alert('Please fix the following errors:\n\n' + errorMessages.join('\n'));
-        showToast(`Please fix the following errors:<br>• ${errorMessages.join('<br>• ')}`, 'error', 8000);
+        showToast('danger', 'Error!', `Please fix the following errors:<br>• ${errorMessages.join('<br>• ')}`);
     }
 
     return isValid;
@@ -427,6 +490,10 @@ function validateEmail(email) {
 
 // Lesson Management Functions
 function addNewLesson() {
+    if (typeof isFreeTrial !== 'undefined' && isFreeTrial && lessons.length >= 1) {
+        showToast('danger', 'Not allowed', 'Free Trial Player can only book one lesson.');
+        return;
+    }
     const lesson = {
         id: lessonIdCounter++,
         type: '',
@@ -595,7 +662,7 @@ function updateLessonTitles() {
 function updateRemoveButtons() {
     const removeButtons = document.querySelectorAll('.remove-lesson-btn');
     removeButtons.forEach(btn => {
-        btn.style.display = lessons.length > 1 ? 'block' : 'none';
+        btn.style.display = (lessons.length > 1 && !isFreeTrial) ? 'block' : 'none';
     });
 }
 
@@ -607,15 +674,26 @@ function updateAllCalculations() {
 }
 
 function updateFinalTime() {
-    if (!selectedTime) return;
+    if (!selectedTime || !selectedDate) return;
 
     const totalMinutes = calculateTotalMinutes();
     const selectedMinutes = timeToMinutes(selectedTime);
+
+    // End-of-day guard using the day's schedule
+    const dayOfWeek = selectedDate.getDay();
+    const daySchedule = adminSettings.dailySchedule[dayOfWeek];
+    if (daySchedule) {
+        const endOfDay = timeToMinutes(daySchedule.endTime);
+        if (selectedMinutes + totalMinutes > endOfDay) {
+            showToast('danger', 'Slot not available', 'Selected time plus lesson duration exceeds daily availability.');
+            clearTimeSelection(); // <-- use helper
+            return null;
+        }
+    }
+
     const finalMinutes = selectedMinutes + totalMinutes;
     const finalTime = minutesToTime(finalMinutes);
-
-    // This calculation is used in the summary
-    return {startTime: selectedTime, endTime: finalTime, totalMinutes};
+    return { startTime: selectedTime, endTime: finalTime, totalMinutes };
 }
 
 function calculateTotalMinutes() {
@@ -763,7 +841,12 @@ function updateHiddenFields() {
             year: 'numeric'
         });
 
-        const timeSlotValue = `${formatTimeDisplay(timeInfo.startTime)} - ${formatTimeDisplay(timeInfo.endTime)}, ${dateStr}`;
+        const buffer = parseInt(adminSettings.timeInterval, 10) || 0;
+        const displayedEnd = minutesToTime(timeToMinutes(timeInfo.endTime) + buffer);
+
+        const timeSlotValue =
+            `${formatTimeDisplay(timeInfo.startTime)} - ${formatTimeDisplay(displayedEnd)}, ${dateStr}`;
+
         document.getElementById('selectedTimeSlot').value = timeSlotValue;
     }
 
@@ -819,7 +902,7 @@ function generateDetailedBookingSummary() {
     }
 
     summary += `Total Lessons: ${lessons.length}\n`;
-    summary += `Total Price: ${calculateTotalPrice().toFixed(2)}\n\n`;
+    // summary += `Total Price: ${calculateTotalPrice().toFixed(2)}\n\n`;
 
     lessons.forEach((lesson, index) => {
         summary += `LESSON ${index + 1} DETAILS\n`;
@@ -856,6 +939,7 @@ function goToToday() {
 function submitBooking() {
     // Gather all booking details
     const bookingData = {
+        playerType: document.getElementById('playerType')?.value || 'Returning',
         fullName: document.getElementById('fullName').value.trim(),
         email: document.getElementById('email').value.trim(),
         description: document.getElementById('description').value.trim(),
@@ -894,8 +978,10 @@ function submitBooking() {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') // For Laravel CSRF protection
         },
         success: function (response) {
+
             // Handle successful response
-            showToast('Booking confirmed! Thank you for your booking.', 'success');
+            showToast('success', 'Success!', 'Booking confirmed! Thank you for your booking.');
+            window.location.href = response.url; // Redirect to the URL
             resetSelection(); // Reset the form after successful booking
         },
         error: function (xhr) {
@@ -904,7 +990,7 @@ function submitBooking() {
             if (xhr.responseJSON && xhr.responseJSON.errors[0]) {
                 errorMessage = xhr.responseJSON.errors[0];
             }
-            showToast(errorMessage, 'error');
+            showToast('danger', 'Error!', errorMessage);
         },
         complete: function () {
             // Reset button state
@@ -1008,90 +1094,54 @@ function resetSelection() {
     document.getElementById('totalAmount').value = '';
 }
 
+function showToast(type = 'success', title = 'Success', message = 'Everything worked!') {
+    const toastEl = document.getElementById('liveToast');
+    const toast = new bootstrap.Toast(toastEl);
 
-// Toast notification function
-function showToast(message, type = 'info', duration = 5000) {
-    const toastContainer = document.querySelector('.toast-container');
+    // Remove old classes
+    toastEl.classList.remove('bg-success', 'bg-danger');
 
-    // Create unique ID for the toast
-    const toastId = 'toast-' + Date.now();
+    // Add new class
+    toastEl.classList.add(type === 'success' ? 'bg-success' : 'bg-danger');
 
-    // Create toast element
-    const toastEl = document.createElement('div');
-    toastEl.className = `toast custom-toast toast-${type}`;
-    toastEl.id = toastId;
-    toastEl.setAttribute('role', 'alert');
-    toastEl.setAttribute('aria-live', 'assertive');
-    toastEl.setAttribute('aria-atomic', 'true');
+    // Set title and message
+    toastEl.querySelector('.toast-title').textContent = title;
+    toastEl.querySelector('.toast-message').innerHTML = message;
 
-    // Set icon and title based on type
-    let iconClass, title;
-    switch (type) {
-        case 'success':
-            iconClass = 'fa-check-circle text-success';
-            title = 'Success';
-            break;
-        case 'error':
-            iconClass = 'fa-exclamation-circle text-danger';
-            title = 'Error';
-            break;
-        case 'warning':
-            iconClass = 'fa-exclamation-triangle text-warning';
-            title = 'Warning';
-            break;
-        default:
-            iconClass = 'fa-info-circle text-info';
-            title = 'Information';
-    }
-
-    // Toast content
-    toastEl.innerHTML = `
-                <div class="toast-header toast-header-${type}">
-                    <i class="fas ${iconClass} toast-icon"></i>
-                    <strong class="me-auto">${title}</strong>
-                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-                <div class="toast-body">${message}</div>
-            `;
-
-    // Add toast to container
-    toastContainer.appendChild(toastEl);
-
-    // Initialize and show toast
-    const toast = new bootstrap.Toast(toastEl, {
-        delay: duration,
-        autohide: duration > 0
-    });
+    // Icon color based on type
+    const icon = toastEl.querySelector('.toast-icon');
+    icon.className = 'fas fa-circle me-2 toast-icon ' + (type === 'success' ? 'text-white' : 'text-white');
 
     toast.show();
-
-    // Remove toast from DOM after it hides
-    toastEl.addEventListener('hidden.bs.toast', () => {
-        toastEl.remove();
-    });
 }
+function onPlayerTypeChange(val) {
+    isFreeTrial = (val === 'FreeTrial');
 
-// Demo functions
-function showSuccessToast() {
-    showToast('Booking confirmed! Thank you for your booking.', 'success');
+    // Toggle the Add Lesson button
+    const addBtn = document.getElementById('addLessonBtn');
+    if (addBtn) addBtn.style.display = isFreeTrial ? 'none' : 'inline-flex';
+
+    // Enforce a single lesson for Free Trial
+    if (isFreeTrial && lessons.length > 1) {
+        lessons = [lessons[0]];
+        // Remove extra lesson cards in the DOM
+        const cards = document.querySelectorAll('.lesson-card');
+        cards.forEach((card, idx) => {
+            if (idx > 0) card.remove();
+        });
+        updateLessonTitles();
+        updateAllCalculations();
+    }
+
+    // Update remove buttons visibility
+    updateRemoveButtons();
 }
-
-function showErrorToast() {
-    showToast('Booking failed. Please check your information and try again.', 'error');
-}
-
-function showWarningToast() {
-    showToast('Could not find address details. Please try again.', 'warning');
-}
-
-function showInfoToast() {
-    showToast('Please complete all required fields before proceeding.', 'info');
-}
-
-
 // Initialize calendar on page load
-// document.addEventListener('DOMContentLoaded', initCalendar);
 document.addEventListener('DOMContentLoaded', function () {
     initCalendar();
-    initAddressAutocomplete(); // Add this line
+    initAddressAutocomplete();
+
+    // Initialize player type controls
+    const initialType = document.getElementById('playerType')?.value || 'Returning';
+    onPlayerTypeChange(initialType);
 });

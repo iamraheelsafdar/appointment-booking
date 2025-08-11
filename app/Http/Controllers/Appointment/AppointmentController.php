@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Appointment;
 
-use App\Http\Requests\Appointment\AppointmentRequest;
 use App\Services\Appointment\AppointmentService;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Foundation\Application;
@@ -15,14 +14,6 @@ use Illuminate\Http\Request;
 
 class AppointmentController extends Controller
 {
-    /**
-     * @param AppointmentRequest $request
-     * @return JsonResponse
-     */
-    public function bookAppointment(AppointmentRequest $request): JsonResponse
-    {
-        return AppointmentService::bookAppointment($request);
-    }
 
     /**
      * @param Request $request

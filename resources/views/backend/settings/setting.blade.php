@@ -1,5 +1,5 @@
 @extends('backend.layouts.app')
-@section('title', 'Add User')
+@section('title', 'Site Settings')
 @section('backend')
     <div class="mw-100 login-card ">
 
@@ -16,6 +16,13 @@
                 <input type="number" id="bufferTime" class="form-control" min="1" max="60" name="buffer_minutes"
                        value="{{ $siteSetting->buffer_minutes ?? old('buffer_minutes') }}" placeholder="Enter buffer time (1-60)">
                 <label for="bufferTime" class="form-label"><i class="fas fa-clock me-2"></i>Buffer Time (in minutes)</label>
+            </div>
+
+            <!-- Buffer Time Input -->
+            <div class="form-floating">
+                <input type="number" id="slotDifference" class="form-control" min="1" max="60" name="slot_difference"
+                       value="{{ $siteSetting->slot_difference ?? old('slot_difference') }}" placeholder="Enter slot time (1-60)">
+                <label for="slotDifference" class="form-label"><i class="fas fa-clock me-2"></i>Slot Time (in minutes)</label>
             </div>
 
             <div class="form-floating">

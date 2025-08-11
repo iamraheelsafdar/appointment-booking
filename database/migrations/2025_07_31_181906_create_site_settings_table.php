@@ -16,6 +16,7 @@ return new class extends Migration {
             $table->string('logo')->nullable();
             $table->string('copyright')->nullable();
             $table->string('buffer_minutes')->nullable();
+            $table->string('slot_difference')->nullable();
             $table->timestamps();
         });
     }

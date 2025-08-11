@@ -16,12 +16,11 @@ return new class extends Migration {
             $table->string('user_type');
             $table->string('email')->unique();
             $table->boolean('status')->default(false);
+            $table->string('coach_type')->nullable();
             $table->string('last_login')->nullable();
             $table->string('phone')->nullable();
             $table->string('profile_image')->nullable();
             $table->string('password');
-            $table->text('google_access_token')->nullable();
-            $table->string('google_email')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();

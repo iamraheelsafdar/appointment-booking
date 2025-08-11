@@ -43,7 +43,7 @@ class UserService implements UserInterface
             DB::beginTransaction();
             $user = User::create((new AddUserDTO($request))->toArray());
             InvitationMailJob::dispatch($user);
-            session()->flash('success', "User {$request['name']} is successfully registered.");
+            session()->flash('success', "Coach {$request['name']} is successfully registered.");
             DB::commit();
             return redirect()->back();
         } catch (\Exception $e) {
@@ -87,7 +87,7 @@ class UserService implements UserInterface
     public static function deleteUser($request): RedirectResponse
     {
         User::find($request->id)->delete();
-        session()->flash('success', "User deleted successfully.");
+        session()->flash('success', "Coach deleted successfully.");
         return redirect()->back();
     }
 
@@ -99,7 +99,7 @@ class UserService implements UserInterface
     {
         $user = User::find($id);
         if (!$user) {
-            session()->flash('errors', "User not found.");
+            session()->flash('errors', "Coach not found.");
             return redirect()->back();
         }
         return view('backend.user.update-user', ['user' => $user]);
@@ -115,7 +115,7 @@ class UserService implements UserInterface
             DB::beginTransaction();
             $user = User::find($request->id);
             $user->update((new UpdateUserDTO($request, $user))->toArray());
-            session()->flash('success', "User Updated successfully.");
+            session()->flash('success', "Coach Updated successfully.");
             DB::commit();
             return redirect()->route('getUser');
         } catch (\Exception $e) {

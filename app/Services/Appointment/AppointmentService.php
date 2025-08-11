@@ -5,6 +5,10 @@ namespace App\Services\Appointment;
 use App\Http\Resources\Appointment\GetAppointmentResource;
 use App\Interfaces\Appointment\AppointmentInterface;
 use App\Filters\Appointment\AppointmentDateFilter;
+use App\Jobs\AppointmentBookingjob;
+use App\Models\Transaction;
+use App\Models\User;
+use App\Services\Site\FrontEndService;
 use Illuminate\Contracts\Foundation\Application;
 use App\DTOs\Appointment\CreateAppointmentDTO;
 use App\DTOs\Lessons\CreateLessonsDTO;
@@ -22,25 +26,6 @@ use App\Helper;
 
 class AppointmentService implements AppointmentInterface
 {
-    /**
-     * @param $request
-     * @return JsonResponse
-     */
-    public static function bookAppointment($request): JsonResponse
-    {
-        try {
-            DB::beginTransaction();
-            $appointmentId = Appointment::create((new CreateAppointmentDTO($request))->toArray());
-            foreach ($request->lessons as $lesson) {
-                Lesson::create((new CreateLessonsDTO($appointmentId->id, $lesson))->toArray());
-            }
-            DB::commit();
-            return response()->json(['message' => 'Appointment booked successfuly']);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return Helper::jsonErrorHandling($request, $e, __FUNCTION__);
-        }
-    }
 
     /**
      * @param $request
@@ -54,10 +39,10 @@ class AppointmentService implements AppointmentInterface
                 AppointmentDateFilter::class,
             ])
             ->thenReturn()
-//            ->where('id', auth()->user()->id)
             ->latest()
             ->orderBy('id', 'desc')
             ->paginate($request->per_page ?? 10);
+
 
         $appointmentsCollection = new DataCollection($appointments);
         $appointmentsCollection->setResourceClass(GetAppointmentResource::class);
@@ -77,7 +62,8 @@ class AppointmentService implements AppointmentInterface
             session()->flash('errors', "User not found.");
             return redirect()->back();
         }
-        return view('backend.appointment.update-appointment', ['appointment' => $appointment]);
+        $assignUser = User::whereHas('Google')->where('user_type', 'Coach')->where('status', '1')->pluck('id', 'name')->toArray();
+        return view('backend.appointment.update-appointment', ['appointment' => $appointment, 'users' => $assignUser]);
     }
 
     /**
@@ -88,8 +74,35 @@ class AppointmentService implements AppointmentInterface
     {
         try {
             DB::beginTransaction();
-            $user = Appointment::find($request->id);
-            $user->update([
+            $appointment = Appointment::find($request->id);
+            if ($request->appointment_status == 'Declined' || $request->appointment_status == 'Rejected') {
+
+                if ($appointment->google_event_id) {
+                    foreach (json_decode($appointment->google_event_id, true) as $detail) {
+                        $user = User::where('id', $detail['user_id'])->first();
+                        Helper::removeBooking($user, $detail['event_id'], $request);
+                    }
+                }
+            }
+            $assignAppointment = Appointment::where('id', $request->id)->where('coach_id', '!=', $request['assign_to'])->first();
+            if ($assignAppointment) {
+                $transaction = Transaction::where('appointment_id', $assignAppointment->id)->first();
+                if ($transaction) {
+                    $assignAppointment->update(['coach_id' => $request['assign_to']]);
+                    $removeAppointment = json_decode($appointment->google_event_id, true);
+                    if (isset($removeAppointment[1])) {
+                        $user = User::where('id', $removeAppointment[1]['user_id'])->first();
+                        Helper::removeBooking($user, $removeAppointment[1]['event_id'], $request);
+                    }
+                    $user = User::where('id', $request['assign_to'])->first();
+                    AppointmentBookingjob::dispatch($user->name,$user->email,$appointment->description);
+                    FrontEndService::assignToGoogleCalender($user, $transaction);
+                }
+
+            }
+
+
+            $appointment->update([
                 'appointment_status' => $request->appointment_status
             ]);
             session()->flash('success', "Appointment status updated successfully.");

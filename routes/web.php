@@ -1,12 +1,13 @@
 <?php
 
-use App\Http\Controllers\Appointment\AppointmentController;
 use App\Http\Controllers\Availability\AvailabilityController;
+use App\Http\Controllers\Appointment\AppointmentController;
 use App\Http\Controllers\Settings\SiteSettingController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Google\GoogleController;
 use App\Http\Controllers\Site\FrontEndController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Transaction\TransactionController;
 use App\Http\Controllers\User\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -40,32 +41,37 @@ Route::group(['middleware' => ['logs']], function () {
 
         Route::group(['middleware' => ['auth']], function () {
 
-            Route::get('/', [DashboardController::class, 'dashboard'])->name('dashboard');
-            Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
-
-            Route::get('/register', [UserController::class, 'registerView'])->name('registerView');
-            Route::post('/register', [UserController::class, 'register'])->name('register');
-            Route::get('/get-user', [UserController::class, 'getUser'])->name('getUser');
-            Route::get('/update-user/{id}', [UserController::class, 'updateUserView'])->name('updateUserView');
-            Route::post('/update-user', [UserController::class, 'updateUser'])->name('updateUser');
-
+            Route::get('appointments', [AppointmentController::class, 'appointmentsView'])->name('appointmentsView');
             Route::get('/update-profile', [UserController::class, 'updateProfileView'])->name('updateProfileView');
             Route::post('/update-profile', [UserController::class, 'updateProfile'])->name('updateProfile');
 
-            Route::get('/update-setting', [SiteSettingController::class, 'updateSettingView'])->name('updateSettingView');
-            Route::post('/update-setting', [SiteSettingController::class, 'updateSetting'])->name('updateSetting');
+            Route::get('/', [DashboardController::class, 'dashboard'])->name('dashboard');
+            Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 
-            Route::post('/delete-user', [UserController::class, 'deleteUser'])->name('deleteUser');
+            Route::group(['middleware' => ['admin']], function () {
 
-            Route::get('appointments', [AppointmentController::class, 'appointmentsView'])->name('appointmentsView');
-            Route::get('update-appointments/{id}', [AppointmentController::class, 'updateAppointmentsView'])->name('updateAppointmentsView');
-            Route::post('update-appointments', [AppointmentController::class, 'updateAppointments'])->name('updateAppointments');
-
-
-            Route::get('availability', [AvailabilityController::class, 'availabilityView'])->name('availabilityView');
-            Route::post('availability', [AvailabilityController::class, 'createAvailability'])->name('createAvailability');
+                Route::get('/register', [UserController::class, 'registerView'])->name('registerView');
+                Route::post('/register', [UserController::class, 'register'])->name('register');
+                Route::get('/get-user', [UserController::class, 'getUser'])->name('getUser');
+                Route::get('/update-user/{id}', [UserController::class, 'updateUserView'])->name('updateUserView');
+                Route::post('/update-user', [UserController::class, 'updateUser'])->name('updateUser');
 
 
+                Route::get('/update-setting', [SiteSettingController::class, 'updateSettingView'])->name('updateSettingView');
+                Route::post('/update-setting', [SiteSettingController::class, 'updateSetting'])->name('updateSetting');
+
+                Route::post('/delete-user', [UserController::class, 'deleteUser'])->name('deleteUser');
+
+                Route::get('update-appointments/{id}', [AppointmentController::class, 'updateAppointmentsView'])->name('updateAppointmentsView');
+                Route::post('update-appointments', [AppointmentController::class, 'updateAppointments'])->name('updateAppointments');
+
+
+                Route::get('availability', [AvailabilityController::class, 'availabilityView'])->name('availabilityView');
+                Route::post('availability', [AvailabilityController::class, 'createAvailability'])->name('createAvailability');
+
+                Route::get('transaction', [TransactionController::class, 'transactionView'])->name('transactionView');
+
+            });
             Route::prefix('google')->group(function () {
                 Route::get('/redirect', [GoogleController::class, 'redirectToGoogle'])->name('redirectToGoogle');
                 Route::get('/callback', [GoogleController::class, 'handleGoogleCallback'])->name('handleGoogleCallback');

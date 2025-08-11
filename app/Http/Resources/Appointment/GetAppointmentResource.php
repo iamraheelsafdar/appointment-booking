@@ -29,6 +29,7 @@ class GetAppointmentResource extends JsonResource
             'total_amount' => $this->total_amount,
             'selected_date' => $this->selected_date,
             'selected_time_slot' => $this->selected_time_slot,
+            'transaction' => $this->transaction,
         ];
     }
 }

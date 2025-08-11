@@ -12,15 +12,16 @@
 <body>
 <!-- Toast Container -->
 <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999">
-    <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="toast-header">
+    <div id="liveToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header d-flex align-items-center">
             <i class="fas fa-circle me-2 toast-icon"></i>
             <strong class="me-auto toast-title">Notification</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            <button type="button" class="btn-close ms-2" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
         <div class="toast-body toast-message"></div>
     </div>
 </div>
+
 <div class="main-container">
     <!-- Calendar Header -->
     <div class="calendar-header">
@@ -40,13 +41,13 @@
             <!-- Calendar Grid -->
             <div class="calendar-container">
                 <div class="calendar-weekdays">
-                    <div class="weekday">Sun</div>
                     <div class="weekday">Mon</div>
                     <div class="weekday">Tue</div>
                     <div class="weekday">Wed</div>
                     <div class="weekday">Thu</div>
                     <div class="weekday">Fri</div>
                     <div class="weekday">Sat</div>
+                    <div class="weekday">Sun</div>
                 </div>
                 <div class="calendar-dates" id="calendarDates">
                     <!-- Calendar dates will be populated by JavaScript -->
@@ -123,6 +124,14 @@
                         </div>
 
                         <div class="form-group">
+                            <label class="form-label">Player Type</label>
+                            <select class="form-control" id="playerType" onchange="onPlayerTypeChange(this.value)">
+                                <option value="Returning">Returning Player</option>
+                                <option value="FreeTrial">Free Trial Player</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
                             <label class="form-label">Suburb</label>
                             <select class="form-control" id="suburb">
                                 <option value="">Select Suburb</option>
@@ -168,7 +177,7 @@
                     <!-- Lessons will be dynamically added here -->
                 </div>
 
-                <button type="button" class="add-lesson-btn" onclick="addNewLesson()">
+                <button type="button" id="addLessonBtn" class="add-lesson-btn" onclick="addNewLesson()">
                     <i class="fas fa-plus"></i> Add Another Lesson
                 </button>
             </div>
@@ -216,6 +225,8 @@
 
 <script>
     window.bookedSlots = @json($bookedSlots);
+    window.availablity = @json($availablity);
+    window.slotDifference = @json((int) $siteSetting->slot_difference ?? 30);
 </script>
 <script src="{{asset('assets/js/front-script.js')}}"></script>
 </body>

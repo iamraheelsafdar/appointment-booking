@@ -39,7 +39,9 @@
                 <th>Total Amount</th>
                 <th>Selected Date</th>
                 <th>Selected Time Slot</th>
-                <th>Action</th>
+                @if(auth()->user()->user_type == 'Admin')
+                    <th>Action</th>
+                @endif
             </tr>
             </thead>
             <tbody>
@@ -68,10 +70,17 @@
                     <td>{{ $appointment['selected_time_slot'] }}</td>
 
 
-                    <td>
-                        <a href="{{ route('updateAppointmentsView', $appointment['id']) }}"
-                           class="btn btn-sm btn-primary float-start"><i class="fa fa-pencil-alt"></i></a>
-                    </td>
+                    @if(auth()->user()->user_type == 'Admin')
+                        <td class="d-flex justify-content-between">
+                            <a href="{{ route('updateAppointmentsView', $appointment['id']) }}"
+                               class="btn btn-sm btn-primary float-start"><i class="fa fa-pencil-alt"></i></a>
+                            @if(isset($appointment['transaction']->session_id))
+                                <a href="{{ route('transactionView', ['search' => $appointment['transaction']->session_id]) }}"
+                                   class="btn btn-sm btn-info float-end ms-2"><i class="fa fa-cash-register"></i> View
+                                    Transaction</a>
+                            @endif
+                        </td>
+                    @endif
                 </tr>
             @empty
                 <tr>
