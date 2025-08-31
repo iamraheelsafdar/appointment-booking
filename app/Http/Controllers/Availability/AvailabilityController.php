@@ -2,31 +2,42 @@
 
 namespace App\Http\Controllers\Availability;
 
-use App\Http\Controllers\Controller;
-use App\Http\Requests\Availability\AvailabilityRequest;
+use App\Http\Requests\Availability\CreateAvailabilityRequest;
 use App\Services\Availability\AvailabilityService;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\View\Factory;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use App\Http\Controllers\Controller;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AvailabilityController extends Controller
 {
     /**
-     * @return View|\Illuminate\Foundation\Application|Factory|Application
+     * @param $id
+     * @return View|\Illuminate\Foundation\Application|Factory|Application|RedirectResponse
      */
-    public function availabilityView(): View|\Illuminate\Foundation\Application|Factory|Application
+    public function availabilityView($id): View|\Illuminate\Foundation\Application|Factory|Application|RedirectResponse
     {
-        return AvailabilityService::availabilityView();
+        return AvailabilityService::availabilityView($id);
     }
 
     /**
-     * @param Request $request
-     * @return RedirectResponse
+     * @param CreateAvailabilityRequest $request
+     * @return JsonResponse
      */
-    public function createAvailability(Request $request): RedirectResponse
+    public function createAvailability(CreateAvailabilityRequest $request): JsonResponse
     {
         return AvailabilityService::createAvailability($request);
+    }
+
+    /**
+     * @param CreateAvailabilityRequest $request
+     * @return JsonResponse
+     */
+    public function deleteAvailability(Request $request): JsonResponse
+    {
+        return AvailabilityService::deleteAvailability($request);
     }
 }

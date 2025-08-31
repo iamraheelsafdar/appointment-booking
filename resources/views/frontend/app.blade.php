@@ -131,15 +131,22 @@
                             </select>
                         </div>
 
+{{--                        <div class="form-group">--}}
+{{--                            <label class="form-label">Suburb</label>--}}
+{{--                            <select class="form-control" id="suburb">--}}
+{{--                                <option value="">Select Suburb</option>--}}
+{{--                                <option value="Toorak">Toorak</option>--}}
+{{--                                <option value="Malvern">Malvern</option>--}}
+{{--                                <option value="Malvern East">Malvern East</option>--}}
+{{--                                <option value="Ashburton">Ashburton</option>--}}
+{{--                                <option value="Caulfield North">Caulfield North</option>--}}
+{{--                            </select>--}}
+{{--                        </div>--}}
+
                         <div class="form-group">
                             <label class="form-label">Suburb</label>
-                            <select class="form-control" id="suburb">
-                                <option value="">Select Suburb</option>
-                                <option value="Toorak">Toorak</option>
-                                <option value="Malvern">Malvern</option>
-                                <option value="Malvern East">Malvern East</option>
-                                <option value="Ashburton">Ashburton</option>
-                                <option value="Caulfield North">Caulfield North</option>
+                            <select class="form-control" id="suburb" disabled>
+                                <option value="Toorak" selected>Toorak</option>
                             </select>
                         </div>
 
@@ -152,7 +159,7 @@
 
                         <div class="form-group">
                             <label class="form-label">City</label>
-                            <input type="text" class="form-control" id="city" placeholder="Melbourne">
+                            <input type="text" class="form-control" id="city" value="Melbourne" readonly>
                         </div>
 
                         <div class="form-group">
@@ -169,6 +176,18 @@
                             <label class="form-label">Country</label>
                             <input type="text" class="form-control" id="country" placeholder="Australia">
                         </div>
+
+
+                        <div class="form-group">
+                        @foreach($coachNames as $coachName)
+                            <label class="form-label">Select Coach</label>
+                            <select class="form-control" id="coachs">
+                                <option value="">Any Coach</option>
+                                <option value="{{$coachName}}">{{$coachName}}</option>
+                            </select>
+                        @endforeach
+                        </div>
+
                     </div>
                 </div>
 

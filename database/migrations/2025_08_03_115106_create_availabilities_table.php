@@ -12,11 +12,15 @@ return new class extends Migration {
     {
         Schema::create('availabilities', function (Blueprint $table) {
             $table->id();
-            $table->string('day')->nullable();
-            $table->time('start_time')->nullable();
-            $table->time('end_time')->nullable();
-            $table->boolean('availability')->default(false);
+            $table->unsignedBigInteger('user_id'); // Coach ID
+            $table->enum('day', ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday','Sunday']);
+            $table->time('start_time');
+            $table->time('end_time');
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
+
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->index(['user_id', 'day', 'is_active']);
         });
     }
 

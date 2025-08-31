@@ -1,156 +1,252 @@
 @extends('backend.layouts.app')
 @section('title', 'Set Availability')
 @section('backend')
-    <div class="mw-100 login-card ">
-
-        <form id="loginForm" action="{{ route('createAvailability') }}" method="POST">
+    <div class="mw-100 login-card">
+        <form id="availabilityForm">
             @csrf
-            <!-- Days and Time Inputs -->
-            <div class="row">
-                <!-- Repeat this block for each day -->
-                <!-- Sunday -->
-                <div class="col-md-6 mb-3">
-                    <div class="form-check">
-                        <input class="form-check-input day-checkbox" type="checkbox" id="SundayCheckbox" name="sunday" {{isset($detail['Sunday']) ? 'checked' : '' }}>
-                        <label class="form-check-label" for="SundayCheckbox">Sunday</label>
-                    </div>
-                    <div class="row mt-2 time-inputs {{isset($detail['Sunday']) ? '' : 'd-none' }}" id="SundayTime">
-                        <div class="col">
-                            <label>Start Time</label>
-                            <input type="time" class="form-control start-time" data-day="Sunday"
-                                   name="sunday_start_time" value="{{$detail['Sunday']['start_time'] ?? '' }}">
-                        </div>
-                        <div class="col">
-                            <label>End Time</label>
-                            <input type="time" class="form-control end-time" data-day="Sunday" name="sunday_end_time" value="{{$detail['Sunday']['end_time'] ?? '' }}">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Monday -->
-                <div class="col-md-6 mb-3">
-                    <div class="form-check">
-                        <input class="form-check-input day-checkbox" type="checkbox" id="MondayCheckbox" name="monday" {{isset($detail['Monday']) ? 'checked' : '' }}>
-                        <label class="form-check-label" for="MondayCheckbox">Monday</label>
-                    </div>
-                    <div class="row mt-2 time-inputs {{isset($detail['Monday']) ? '' : 'd-none' }}" id="MondayTime">
-                        <div class="col">
-                            <label>Start Time</label>
-                            <input type="time" class="form-control start-time" data-day="Monday"
-                                   name="monday_start_time" value="{{$detail['Monday']['start_time'] ?? '' }}">
-                        </div>
-                        <div class="col">
-                            <label>End Time</label>
-                            <input type="time" class="form-control end-time" data-day="Monday" name="monday_end_time" value="{{$detail['Monday']['end_time'] ?? '' }}">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tuesday -->
-                <div class="col-md-6 mb-3">
-                    <div class="form-check">
-                        <input class="form-check-input day-checkbox" type="checkbox" id="TuesdayCheckbox"
-                               name="tuesday" {{isset($detail['Tuesday']) ? 'checked' : '' }}>
-                        <label class="form-check-label" for="TuesdayCheckbox">Tuesday</label>
-                    </div>
-                    <div class="row mt-2 time-inputs {{isset($detail['Tuesday']) ? '' : 'd-none' }}" id="TuesdayTime">
-                        <div class="col">
-                            <label>Start Time</label>
-                            <input type="time" class="form-control start-time" data-day="Tuesday"
-                                   name="tuesday_start_time" value="{{$detail['Tuesday']['start_time'] ?? '' }}">
-                        </div>
-                        <div class="col">
-                            <label>End Time</label>
-                            <input type="time" class="form-control end-time" data-day="Tuesday" name="tuesday_end_time" value="{{$detail['Tuesday']['end_time'] ?? '' }}">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Wednesday -->
-                <div class="col-md-6 mb-3">
-                    <div class="form-check">
-                        <input class="form-check-input day-checkbox" type="checkbox" id="WednesdayCheckbox"
-                               name="wednesday" {{isset($detail['Wednesday']) ? 'checked' : '' }}>
-                        <label class="form-check-label" for="WednesdayCheckbox">Wednesday</label>
-                    </div>
-                    <div class="row mt-2 time-inputs {{isset($detail['Wednesday']) ? '' : 'd-none' }}" id="WednesdayTime">
-                        <div class="col">
-                            <label>Start Time</label>
-                            <input type="time" class="form-control start-time" data-day="Wednesday"
-                                   name="wednesday_start_time" value="{{$detail['Wednesday']['start_time'] ?? '' }}">
-                        </div>
-                        <div class="col">
-                            <label>End Time</label>
-                            <input type="time" class="form-control end-time" data-day="Wednesday"
-                                   name="wednesday_end_time" value="{{$detail['Wednesday']['end_time'] ?? '' }}">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Thursday -->
-                <div class="col-md-6 mb-3">
-                    <div class="form-check">
-                        <input class="form-check-input day-checkbox" type="checkbox" id="ThursdayCheckbox"
-                               name="thursday" {{isset($detail['Thursday']) ? 'checked' : '' }}>
-                        <label class="form-check-label" for="ThursdayCheckbox">Thursday</label>
-                    </div>
-                    <div class="row mt-2 time-inputs {{isset($detail['Thursday']) ? '' : 'd-none' }}" id="ThursdayTime">
-                        <div class="col">
-                            <label>Start Time</label>
-                            <input type="time" class="form-control start-time" data-day="Thursday"
-                                   name="thursday_start_time" value="{{$detail['Thursday']['start_time'] ?? '' }}">
-                        </div>
-                        <div class="col">
-                            <label>End Time</label>
-                            <input type="time" class="form-control end-time" data-day="Thursday"
-                                   name="thursday_end_time" value="{{$detail['Thursday']['end_time'] ?? '' }}">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Friday -->
-                <div class="col-md-6 mb-3">
-                    <div class="form-check">
-                        <input class="form-check-input day-checkbox" type="checkbox" id="FridayCheckbox" name="friday" {{isset($detail['Friday']) ? 'checked' : '' }}>
-                        <label class="form-check-label" for="FridayCheckbox">Friday</label>
-                    </div>
-                    <div class="row mt-2 time-inputs {{isset($detail['Friday']) ? '' : 'd-none' }}" id="FridayTime">
-                        <div class="col">
-                            <label>Start Time</label>
-                            <input type="time" class="form-control start-time" data-day="Friday"
-                                   name="friday_start_time" value="{{$detail['Friday']['start_time'] ?? '' }}">
-                        </div>
-                        <div class="col">
-                            <label>End Time</label>
-                            <input type="time" class="form-control end-time" data-day="Friday" name="friday_end_time" value="{{$detail['Friday']['end_time'] ?? '' }}">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Saturday -->
-                <div class="col-md-6 mb-3">
-                    <div class="form-check">
-                        <input class="form-check-input day-checkbox" type="checkbox" id="SaturdayCheckbox"
-                               name="saturday" {{isset($detail['Saturday']) ? 'checked' : '' }}>
-                        <label class="form-check-label" for="SaturdayCheckbox">Saturday</label>
-                    </div>
-                    <div class="row mt-2 time-inputs {{isset($detail['Saturday']) ? '' : 'd-none' }}" id="SaturdayTime">
-                        <div class="col">
-                            <label>Start Time</label>
-                            <input type="time" class="form-control start-time" data-day="Saturday"
-                                   name="saturday_start_time" value="{{$detail['Saturday']['start_time'] ?? '' }}">
-                        </div>
-                        <div class="col">
-                            <label>End Time</label>
-                            <input type="time" class="form-control end-time" data-day="Saturday"
-                                   name="saturday_end_time" value="{{$detail['Saturday']['end_time'] ?? '' }}">
-                        </div>
-                    </div>
-                </div>
+            <input type="hidden" name="user_id" value="{{ request()->route('id') }}">
+            <div class="row" id="availabilityContainer">
+                <!-- Days will be generated by JavaScript -->
             </div>
             <button type="submit" class="btn btn-primary btn-login primary">
                 <i class="fas fa-upload me-2"></i>Set Availability
             </button>
         </form>
     </div>
+    <script>
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        let availabilityData = @json($availabilities ?? []);
+        let userId = @json(request()->route('id') ?? '');
+        let slotCounter = 0;
+        document.addEventListener('DOMContentLoaded', function() {
+            generateDayCards();
+            setupFormSubmission();
+        });
+
+        function generateDayCards() {
+            const container = document.getElementById('availabilityContainer');
+            container.innerHTML = '';
+
+            days.forEach(day => {
+                const dayCard = createDayCard(day);
+                container.appendChild(dayCard);
+            });
+        }
+
+        function createDayCard(day) {
+            const col = document.createElement('div');
+            col.className = 'col-md-6 mb-3';
+
+            const existingSlots = availabilityData[day] || [];
+
+            col.innerHTML = `
+                <div class="day-card">
+                    <div class="day-header">
+                        <div class="form-check">
+                            <input class="form-check-input day-checkbox" type="checkbox" id="${day}Checkbox"
+                                   ${existingSlots.length > 0 ? 'checked' : ''}>
+                            <label class="form-check-label" for="${day}Checkbox">${day}</label>
+                        </div>
+                        <button type="button" class="btn-add-time ${existingSlots.length > 0 ? '' : 'd-none'}"
+                                onclick="addTimeSlot('${day}')">
+                            <i class="fas fa-plus"></i> Add Time
+                        </button>
+                    </div>
+                    <div class="time-slots-container" id="${day}Slots" ${existingSlots.length > 0 ? '' : 'style="display:none"'}>
+                        ${existingSlots.length > 0 ? generateExistingSlots(day, existingSlots) : ''}
+                    </div>
+                </div>
+            `;
+
+            // Add event listener for checkbox
+            const checkbox = col.querySelector('.day-checkbox');
+            checkbox.addEventListener('change', function() {
+                toggleDayAvailability(day, this.checked);
+            });
+
+            return col;
+        }
+
+        function generateExistingSlots(day, slots) {
+            let html = '';
+            slots.forEach(slot => {
+                html += createTimeSlotHTML(day, slot.start_time, slot.end_time, slot.id);
+            });
+            return html;
+        }
+
+        function createTimeSlotHTML(day, startTime = '', endTime = '', slotId = null) {
+            const uniqueId = slotId || ++slotCounter;
+            return `
+                <div class="time-slot" data-slot-id="${uniqueId}">
+                    <div class="time-inputs">
+                        <div>
+                            <label>Start Time</label>
+                            <input type="time" class="form-control start-time"
+                                   name="slots[${day}][${uniqueId}][start_time]"
+                                   value="${startTime}" required>
+                        </div>
+                        <div>
+                            <label>End Time</label>
+                            <input type="time" class="form-control end-time"
+                                   name="slots[${day}][${uniqueId}][end_time]"
+                                   value="${endTime}" required>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-remove-time" onclick="removeTimeSlot(this, '${day}', ${slotId})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    ${slotId ? `<input type="hidden" name="slots[${day}][${uniqueId}][id]" value="${slotId}">` : ''}
+                </div>
+            `;
+        }
+
+        function toggleDayAvailability(day, isChecked) {
+            const slotsContainer = document.getElementById(`${day}Slots`);
+            const addButton = document.querySelector(`[onclick="addTimeSlot('${day}')"]`);
+
+            if (isChecked) {
+                slotsContainer.style.display = 'block';
+                addButton.classList.remove('d-none');
+
+                // Add first time slot if none exist
+                if (slotsContainer.children.length === 0) {
+                    addTimeSlot(day);
+                }
+            } else {
+                slotsContainer.style.display = 'none';
+                addButton.classList.add('d-none');
+
+                // Clear all time slots
+                slotsContainer.innerHTML = '';
+            }
+        }
+
+        function addTimeSlot(day) {
+            const slotsContainer = document.getElementById(`${day}Slots`);
+            const slotHTML = createTimeSlotHTML(day);
+            slotsContainer.insertAdjacentHTML('beforeend', slotHTML);
+
+            // Add validation to new time inputs
+            addTimeValidation(slotsContainer.lastElementChild);
+        }
+
+        function removeTimeSlot(button, day, slotId) {
+            const timeSlot = button.closest('.time-slot');
+
+            // If this is an existing slot (has ID), mark for deletion
+            if (slotId) {
+                // Make API call to delete from database
+                deleteSlotFromDatabase(slotId);
+            }
+
+            timeSlot.remove();
+
+            // Hide day section if no slots remain
+            const slotsContainer = document.getElementById(`${day}Slots`);
+            if (slotsContainer.children.length === 0) {
+                const checkbox = document.getElementById(`${day}Checkbox`);
+                checkbox.checked = false;
+                toggleDayAvailability(day, false);
+            }
+        }
+
+        function addTimeValidation(slotElement) {
+            const startTime = slotElement.querySelector('.start-time');
+            const endTime = slotElement.querySelector('.end-time');
+
+            endTime.addEventListener('change', function() {
+                if (startTime.value && this.value <= startTime.value) {
+                    alert('End time must be after start time.');
+                    this.value = '';
+                }
+            });
+
+            startTime.addEventListener('change', function() {
+                if (endTime.value && endTime.value <= this.value) {
+                    endTime.value = '';
+                }
+            });
+        }
+
+        function deleteSlotFromDatabase(slotId) {
+            fetch('{{ route("availability.destroy") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({ id: slotId , user_id: userId})
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        console.error('Failed to delete slot:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting slot:', error);
+                });
+        }
+
+        function setupFormSubmission() {
+            document.getElementById('availabilityForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const formData = new FormData(this);
+                const availabilities = [];
+
+                // Process form data
+                const slots = {};
+                for (let [key, value] of formData.entries()) {
+                    if (key.startsWith('slots[')) {
+                        const matches = key.match(/slots\[(\w+)\]\[(\d+)\]\[(\w+)\]/);
+                        if (matches) {
+                            const [, day, slotId, field] = matches;
+                            if (!slots[day]) slots[day] = {};
+                            if (!slots[day][slotId]) slots[day][slotId] = {};
+                            slots[day][slotId][field] = value;
+                        }
+                    }
+                }
+
+                // Convert to array format
+                Object.keys(slots).forEach(day => {
+                    Object.keys(slots[day]).forEach(slotId => {
+                        const slot = slots[day][slotId];
+                        if (slot.start_time && slot.end_time) {
+                            availabilities.push({
+                                day: day,
+                                start_time: slot.start_time,
+                                end_time: slot.end_time
+                            });
+                        }
+                    });
+                });
+
+                // Submit via AJAX
+                fetch('{{ route("createAvailability") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ availabilities: availabilities, user_id: userId })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Availability updated successfully!');
+                            location.reload();
+                        } else {
+                            alert('Error: ' + (data.errors ? data.errors.join(', ') : data.message));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Something went wrong. Please try again.');
+                    });
+            });
+        }
+    </script>
 @endsection

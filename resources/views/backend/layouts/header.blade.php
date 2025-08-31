@@ -40,21 +40,21 @@
                     </a>
                 </li>
                 @if(auth()->user()->user_type == 'Admin' )
-                    <li class="sidebar-dropdown {{request()->routeIs('registerView', 'getUser') ? 'active' : ''}}">
+                    <li class="sidebar-dropdown {{request()->routeIs('registerView', 'getUser', 'availabilityView') ? 'active' : ''}}">
                         <a href="#">
                             <i class="fa fa-user-alt"></i>
                             <span>Coaches</span>
                             {{--                        <span class="badge badge-pill badge-warning">New</span>--}}
                         </a>
                         <div class="sidebar-submenu"
-                             style="display:{{request()->routeIs('registerView', 'getUser') ? 'block' : ''}};">
+                             style="display:{{request()->routeIs('registerView', 'getUser','availabilityView') ? 'block' : ''}};">
                             <ul>
                                 <li class="{{request()->routeIs('registerView') ? 'active' : ''}}">
                                     <a href="{{route('registerView')}}">Add Coach
                                         {{--                                    <span class="badge badge-pill badge-success">Pro</span>--}}
                                     </a>
                                 </li>
-                                <li class="{{request()->routeIs('getUser') ? 'active' : ''}}">
+                                <li class="{{request()->routeIs('getUser','availabilityView') ? 'active' : ''}}">
                                     <a href="{{route('getUser')}}">View Coach</a>
                                 </li>
                             </ul>
@@ -76,13 +76,13 @@
                             {{--                        <span class="badge badge-pill badge-primary">Beta</span>--}}
                         </a>
                     </li>
-                    <li class="{{request()->routeIs('availabilityView') ? 'main-active' : ''}}">
-                        <a href="{{route('availabilityView')}}">
-                            <i class="fa fa-map-marked"></i>
-                            <span>Availability</span>
-                            {{--                        <span class="badge badge-pill badge-primary">Beta</span>--}}
-                        </a>
-                    </li>
+{{--                    <li class="{{request()->routeIs('availabilityView') ? 'main-active' : ''}}">--}}
+{{--                        <a href="{{route('availabilityView')}}">--}}
+{{--                            <i class="fa fa-map-marked"></i>--}}
+{{--                            <span>Availability</span>--}}
+{{--                            --}}{{--                        <span class="badge badge-pill badge-primary">Beta</span>--}}
+{{--                        </a>--}}
+{{--                    </li>--}}
                 @endif
                 {{--                <li class="sidebar-dropdown">--}}
                 {{--                    <a href="#">--}}

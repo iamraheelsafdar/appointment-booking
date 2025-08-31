@@ -1,15 +1,54 @@
-// Admin settings - Dynamic time intervals
 const adminSettings = {
-    // availableDays: [1, 2, 3, 4, 5], // Monday to Friday (0=Sunday, 6=Saturday)
-    // startTime: "08:00",
-    // endTime: "17:00",
-    timeInterval: window.slotDifference, // Dynamic interval in minutes
+    timeInterval: window.slotDifference,
 
+    // Dummy chunked schedule - replace with your dynamic data
+    // dailySchedule: {
+    //     1: { // Monday
+    //         chunks: [
+    //         ]
+    //     },
+    //     2: { // Tuesday
+    //         chunks: [
+    //             { startTime: "09:00", endTime: "12:00" },
+    //             { startTime: "14:00", endTime: "17:00" }
+    //         ]
+    //     },
+    //     3: { // Wednesday
+    //         chunks: [
+    //             { startTime: "08:00", endTime: "11:00" },
+    //             { startTime: "13:00", endTime: "16:00" }
+    //         ]
+    //     },
+    //     4: { // Thursday
+    //         chunks: [
+    //             { startTime: "10:00", endTime: "12:00" },
+    //             { startTime: "09:00", endTime: "12:00" },
+    //             { startTime: "15:00", endTime: "18:00" }
+    //         ]
+    //     },
+    //     5: { // Friday
+    //         chunks: [
+    //             { startTime: "08:00", endTime: "10:00" },
+    //             { startTime: "13:00", endTime: "15:00" },
+    //             { startTime: "16:00", endTime: "19:00" }
+    //         ]
+    //     },
+    //     6: { // Saturday
+    //         chunks: [
+    //             { startTime: "08:00", endTime: "12:00" },
+    //             // { startTime: "14:00", endTime: "17:00" }
+    //         ]
+    //     },
+    //     0: { // Sunday
+    //         chunks: [
+    //             { startTime: "10:00", endTime: "14:00" }
+    //         ]
+    //     }
+    // },
     dailySchedule: window.availablity,
-
-
     bookedSlots: window.bookedSlots
 };
+console.log(adminSettings.dailySchedule)
 
 // Tennis lesson pricing
 const rateStructure = {
@@ -69,8 +108,14 @@ function renderCalendar() {
     // Get first day of month and number of days
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
+
+
     const startDate = new Date(firstDay);
-    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    const day = firstDay.getDay(); // 0 (Sun) → 6 (Sat)
+
+    const adjustedDay = (day === 0 ? 6 : day - 1);
+
+    startDate.setDate(startDate.getDate() - adjustedDay);
 
     const calendarDates = document.getElementById('calendarDates');
     calendarDates.innerHTML = '';
@@ -94,7 +139,8 @@ function createDateElement(date, currentMonth) {
     const isCurrentMonth = date.getMonth() === currentMonth;
     const isToday = isDateToday(date);
     // const isAvailable = isDateAvailable(date);
-    const dayOfWeek = date.getDay();
+    let dayOfWeek = date.getDay(); // 0 = Sun
+    // dayOfWeek = (dayOfWeek === 0 ? 6 : dayOfWeek - 1); // Shift to Mon = 0
     const isAvailable = adminSettings.dailySchedule[dayOfWeek] !== undefined;
     const isPast = date < new Date().setHours(0, 0, 0, 0);
 
@@ -116,7 +162,6 @@ function createDateElement(date, currentMonth) {
     dateElement.appendChild(dateNumber);
 
     // Add availability indicator for current month dates
-    // Add availability indicator for current month dates
     if (isCurrentMonth && !isPast) {
         const indicator = document.createElement('div');
         indicator.className = 'availability-indicator';
@@ -125,11 +170,17 @@ function createDateElement(date, currentMonth) {
             const dateStr = formatDate(date);
             const bookedCount = adminSettings.bookedSlots[dateStr]?.length || 0;
 
-            // Use daily schedule to calculate total slots
+            // Calculate total slots for chunked schedule
             const daySchedule = adminSettings.dailySchedule[dayOfWeek];
-            const start = timeToMinutes(daySchedule.startTime);
-            const end = timeToMinutes(daySchedule.endTime);
-            const totalSlots = Math.floor((end - start) / adminSettings.timeInterval);
+            let totalSlots = 0;
+
+            if (daySchedule && daySchedule.chunks) {
+                daySchedule.chunks.forEach(chunk => {
+                    const start = timeToMinutes(chunk.startTime);
+                    const end = timeToMinutes(chunk.endTime);
+                    totalSlots += Math.floor((end - start) / adminSettings.timeInterval);
+                });
+            }
 
             if (bookedCount === 0) {
                 indicator.classList.add('available');
@@ -162,7 +213,8 @@ function isDateToday(date) {
 
 function isDateAvailable(date) {
     const dayOfWeek = date.getDay();
-    return adminSettings.dailySchedule[dayOfWeek] !== undefined;
+    const daySchedule = adminSettings.dailySchedule[dayOfWeek];
+    return daySchedule && daySchedule.chunks && daySchedule.chunks.length > 0;
 }
 
 function formatDate(date) {
@@ -183,6 +235,12 @@ function getTotalSlots(date) {
 }
 
 function timeToMinutes(time) {
+    // Add safety check for undefined or null time
+    if (!time || typeof time !== 'string') {
+        console.error('timeToMinutes received invalid time:', time);
+        return 0;
+    }
+
     const [hours, minutes] = time.split(':').map(Number);
     return hours * 60 + minutes;
 }
@@ -220,7 +278,6 @@ function showTimeSlots(date) {
     const selectedDateChip = document.getElementById('selectedDateChip');
     const timeSlots = document.getElementById('timeSlots');
 
-    // Format date for display
     const dateStr = date.toLocaleDateString('en-US', {
         weekday: 'long',
         month: 'long',
@@ -228,33 +285,29 @@ function showTimeSlots(date) {
     });
     selectedDateChip.textContent = dateStr;
 
-    // Generate time slots
     const dateKey = formatDate(date);
     const bookedSlots = adminSettings.bookedSlots[dateKey] || [];
-
     timeSlots.innerHTML = '';
 
-    // Get day of week (0=Sunday, 1=Monday, etc.)
     const dayOfWeek = date.getDay();
-
-    // Get schedule for this day
     const daySchedule = adminSettings.dailySchedule[dayOfWeek];
 
-    if (!daySchedule) {
+    if (!daySchedule || !daySchedule.chunks) {
         timeSlots.innerHTML = '<div class="text-center p-4">No available times for this day</div>';
         return;
     }
 
-    // Use day-specific schedule instead of global settings
-    const startMinutes = timeToMinutes(daySchedule.startTime);
-    const endMinutes = timeToMinutes(daySchedule.endTime);
+    // Generate time slots for each chunk
+    daySchedule.chunks.forEach(chunk => {
+        const startMinutes = timeToMinutes(chunk.startTime);
+        const endMinutes = timeToMinutes(chunk.endTime);
 
-    // Generate time slots using day-specific schedule
-    for (let minutes = startMinutes; minutes < endMinutes; minutes += adminSettings.timeInterval) {
-        const timeStr = minutesToTime(minutes);
-        const slot = createTimeSlot(timeStr, bookedSlots.includes(timeStr));
-        timeSlots.appendChild(slot);
-    }
+        for (let minutes = startMinutes; minutes < endMinutes; minutes += adminSettings.timeInterval) {
+            const timeStr = minutesToTime(minutes);
+            const slot = createTimeSlot(timeStr, bookedSlots.includes(timeStr));
+            timeSlots.appendChild(slot);
+        }
+    });
 
     timePanel.style.display = 'block';
 }
@@ -302,6 +355,11 @@ function selectTime(time, element) {
 
     // Update calculations
     updateAllCalculations();
+
+    // If we're on step 2, regenerate summary to reflect new time
+    if (currentStep === 2) {
+        generateSummary();
+    }
 }
 
 function clearTimeSelection() {
@@ -326,7 +384,7 @@ function clearTimeSelection() {
     // Keep the time panel visible and bring it into view for re-selection
     const timePanel = document.getElementById('timePanel');
     if (timePanel && timePanel.scrollIntoView) {
-        timePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        timePanel.scrollIntoView({behavior: 'smooth', block: 'start'});
     }
 }
 
@@ -418,13 +476,17 @@ function validateStep1() {
     let isValid = true;
     const errorMessages = [];
 
-    // Validate personal details
     const fullName = document.getElementById('fullName').value.trim();
     const email = document.getElementById('email').value.trim();
     const suburb = document.getElementById('suburb').value;
     const address = document.getElementById('address').value.trim();
     const city = document.getElementById('city').value.trim();
     const postalCode = document.getElementById('postalCode').value.trim();
+
+    if (!validateMelbourneAddress()) {
+        errorMessages.push('Please select a valid Melbourne address');
+        isValid = false;
+    }
 
     if (!fullName) {
         errorMessages.push('Full name is required');
@@ -458,12 +520,7 @@ function validateStep1() {
         errorMessages.push('Postal code is required');
         isValid = false;
     }
-    // else if (!/^\d{5}$/.test(postalCode)) {
-    //     errorMessages.push('Postal code must be 5 digits');
-    //     isValid = false;
-    // }
 
-    // Validate lessons
     lessons.forEach(lesson => {
         if (!lesson.type || !lesson.duration || !lesson.ballLevel) {
             errorMessages.push('Please complete all lesson details');
@@ -497,9 +554,10 @@ function addNewLesson() {
     const lesson = {
         id: lessonIdCounter++,
         type: '',
-        duration: adminSettings.timeInterval, // Use dynamic interval
+        duration: adminSettings.timeInterval,
         players: 1,
-        ballLevel: ''
+        ballLevel: '',
+        description: '' // Add description field
     };
 
     lessons.push(lesson);
@@ -552,17 +610,32 @@ function renderLesson(lesson) {
                         <label class="form-label">Age - Ball Level</label>
                         <select class="form-control lesson-ball" onchange="updateLessonBallLevel(${lesson.id}, this.value)">
                             <option value="">Select Age - Ball Level</option>
-                            <option value="Red">2-8 Years Old - Red Ball</option>
+                            <option value="Red">3-8 Years Old - Red Ball</option>
                             <option value="Orange">9-10 Years Old - Orange Ball</option>
                             <option value="Green">11-12 Years Old - Green Ball</option>
                             <option value="Yellow">13+ Years Old - Yellow Ball</option>
                         </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Lesson Description (Optional)</label>
+                        <textarea class="form-control lesson-description"
+                                  onchange="updateLessonDescription(${lesson.id}, this.value)"
+                                  placeholder="Any special requirements or notes for this lesson"
+                                  rows="1"></textarea>
                     </div>
                 </div>
             `;
 
     container.appendChild(lessonCard);
     updateRemoveButtons();
+}
+
+function updateLessonDescription(lessonId, description) {
+    const lesson = lessons.find(l => l.id === lessonId);
+    if (lesson) {
+        lesson.description = description;
+        updateAllCalculations();
+    }
 }
 
 function generateDurationOptions(selectedDuration) {
@@ -678,21 +751,27 @@ function updateFinalTime() {
 
     const totalMinutes = calculateTotalMinutes();
     const selectedMinutes = timeToMinutes(selectedTime);
+    const endMinutes = selectedMinutes + totalMinutes;
 
-    // End-of-day guard using the day's schedule
+    // Check if the lesson fits within any available chunk
     const dayOfWeek = selectedDate.getDay();
     const daySchedule = adminSettings.dailySchedule[dayOfWeek];
-    if (daySchedule) {
-        const endOfDay = timeToMinutes(daySchedule.endTime);
-        if (selectedMinutes + totalMinutes > endOfDay) {
-            showToast('danger', 'Slot not available', 'Selected time plus lesson duration exceeds daily availability.');
-            clearTimeSelection(); // <-- use helper
+
+    if (daySchedule && daySchedule.chunks) {
+        const fitsInChunk = daySchedule.chunks.some(chunk => {
+            const chunkStart = timeToMinutes(chunk.startTime);
+            const chunkEnd = timeToMinutes(chunk.endTime);
+            return selectedMinutes >= chunkStart && endMinutes <= chunkEnd;
+        });
+
+        if (!fitsInChunk) {
+            showToast('danger', 'Slot not available', 'Selected time plus lesson duration does not fit within available time chunks.');
+            clearTimeSelection();
             return null;
         }
     }
 
-    const finalMinutes = selectedMinutes + totalMinutes;
-    const finalTime = minutesToTime(finalMinutes);
+    const finalTime = minutesToTime(endMinutes);
     return { startTime: selectedTime, endTime: finalTime, totalMinutes };
 }
 
@@ -701,6 +780,9 @@ function calculateTotalMinutes() {
 }
 
 function calculateTotalPrice() {
+    if (isFreeTrial) {
+        return 0;
+    }
     let total = 0;
 
     lessons.forEach(lesson => {
@@ -812,15 +894,16 @@ function generateSummary() {
 
     lessons.forEach((lesson, index) => {
         summaryHTML += `
-                    <div style="margin: 12px 0; padding: 12px; background: rgba(6, 64, 43, 0.05); border-radius: 8px;">
-                        <strong>Lesson ${index + 1}:</strong><br>
-                        <small>
-                            ${lesson.type || 'Not selected'} - ${lesson.duration || 0} min -
-                            ${lesson.players || 0} player${lesson.players !== 1 ? 's' : ''} -
-                            ${lesson.ballLevel || 'Not selected'}
-                        </small>
-                    </div>
-                `;
+        <div style="margin: 12px 0; padding: 12px; background: rgba(6, 64, 43, 0.05); border-radius: 8px;">
+            <strong>Lesson ${index + 1}:</strong><br>
+            <small>
+                ${lesson.type || 'Not selected'} - ${lesson.duration || 0} min -
+                ${lesson.players || 0} player${lesson.players !== 1 ? 's' : ''} -
+                ${lesson.ballLevel || 'Not selected'}
+                ${lesson.description ? `<br><em>Description: ${lesson.description}</em>` : ''}
+            </small>
+        </div>
+    `;
     });
 
     summaryContainer.innerHTML = summaryHTML;
@@ -910,7 +993,8 @@ function generateDetailedBookingSummary() {
         summary += `Lesson Type: ${lesson.type || 'Not selected'}\n`;
         summary += `Duration: ${lesson.duration || 0} minutes\n`;
         summary += `Number Of Players: ${lesson.players || 0}\n`;
-        summary += `Age - Ball Level: ${lesson.ballLevel || 'Not selected'}\n\n`;
+        summary += `Age - Ball Level: ${lesson.ballLevel || 'Not selected'}\n`;
+        summary += `Description: ${lesson.description || 'N/A'}\n\n`;
     });
 
     summary += `Booking Created: ${new Date().toLocaleString()}\n`;
@@ -1002,62 +1086,102 @@ function submitBooking() {
 
 // Initialize Google Places Autocomplete
 function initAddressAutocomplete() {
-    // Create the autocomplete object
     const addressInput = document.getElementById('address');
+
+    // Define Melbourne bounds more precisely
+    const melbourneBounds = new google.maps.LatLngBounds(
+        new google.maps.LatLng(-37.9, 144.8), // Southwest corner
+        new google.maps.LatLng(-37.6, 145.2)  // Northeast corner
+    );
+
     const autocomplete = new google.maps.places.Autocomplete(addressInput, {
         types: ['address'],
-        // componentRestrictions: {country: 'au'} // Restrict to Australia
+        componentRestrictions: {country: 'AU'}, // Restrict to Australia
+        bounds: melbourneBounds, // Bias results to Melbourne area
+        strictBounds: true, // Enforce strict bounds
+        fields: ['address_components', 'formatted_address', 'geometry'] // Limit fields for better performance
+    });
+
+    // Set additional options to prefer Melbourne results
+    autocomplete.setOptions({
+        bounds: melbourneBounds,
+        strictBounds: true
     });
 
     // Listen for when a place is selected
     autocomplete.addListener('place_changed', function () {
         const place = autocomplete.getPlace();
+
         if (!place.address_components) {
+            console.log('No address components found');
             return;
         }
 
-        // Reset all address-related fields
-        // document.getElementById('suburb').value = '';
-        // document.getElementById('city').value = '';
-        // document.getElementById('postalCode').value = '';
-        // document.getElementById('state').value = '';
-        // document.getElementById('country').value = '';
+        // Check if the selected place is within Melbourne area
+        if (place.geometry && place.geometry.location) {
+            const lat = place.geometry.location.lat();
+            const lng = place.geometry.location.lng();
 
-        // Parse address components
+            // More precise Melbourne area check
+            if (lat < -37.9 || lat > -37.6 || lng < 144.8 || lng > 145.2) {
+                showToast('danger', 'Location Error', 'Please select an address within Melbourne area only.');
+                addressInput.value = '';
+                return;
+            }
+        }
+
+        // Force specific values regardless of what Google returns
+        document.getElementById('suburb').value = 'Toorak';
+        document.getElementById('city').value = 'Melbourne';
+        document.getElementById('state').value = 'Victoria';
+        document.getElementById('country').value = 'Australia';
+
+        // Parse other address components
         const addressComponents = place.address_components;
         for (const component of addressComponents) {
             const componentType = component.types[0];
 
             switch (componentType) {
-                case 'locality': // City
-                    document.getElementById('city').value = component.long_name;
-                    break;
-                case 'administrative_area_level_1': // State
-                    document.getElementById('state').value = component.long_name;
-                    break;
-                case 'postal_code': // Postal code
+                case 'postal_code':
                     document.getElementById('postalCode').value = component.long_name;
-                    break;
-                    // case 'sublocality_level_1': // Suburb (common in AU)
-                    // case 'neighborhood': // Alternative for suburb
-                    // document.getElementById('suburb').value = component.long_name;
-                    break;
-                case 'country': // Country
-                    document.getElementById('country').value = component.long_name;
                     break;
             }
         }
 
-        // Special handling for Melbourne suburbs
-        if (!document.getElementById('suburb').value) {
-            // Try to extract suburb from formatted address
-            const formattedAddress = place.formatted_address || '';
-            const suburbMatch = formattedAddress.match(/(\b\w+\b)(?= VIC \d{4}, Australia)/i);
-            if (suburbMatch && suburbMatch[1]) {
-                document.getElementById('suburb').value = suburbMatch[1];
-            }
+        // Validate that it's a Melbourne postal code (3000-3999)
+        const postalCode = document.getElementById('postalCode').value;
+        if (postalCode && (parseInt(postalCode) < 3000 || parseInt(postalCode) > 3999)) {
+            showToast('danger', 'Location Error', 'Please select an address within Melbourne area only.');
+            addressInput.value = '';
+            document.getElementById('postalCode').value = '';
+            return;
         }
     });
+}
+
+function validateMelbourneAddress() {
+    const addressInput = document.getElementById('address');
+    const address = addressInput.value.toLowerCase();
+
+    // List of Melbourne suburbs you want to allow (add more as needed)
+    const allowedSuburbs = [
+        'Toorak', 'south yarra', 'prahran', 'windsor', 'st kilda',
+        'melbourne', 'southbank', 'docklands', 'carlton', 'fitzroy',
+        'collingwood', 'richmond', 'hawthorn', 'camberwell', 'malvern'
+        // Add more Melbourne suburbs as needed
+    ];
+
+    const containsAllowedSuburb = allowedSuburbs.some(suburb =>
+        address.includes(suburb)
+    );
+
+    if (!containsAllowedSuburb && address.length > 0) {
+        showToast('danger', 'Location Error', 'Please select an address within Melbourne area only.');
+        addressInput.value = '';
+        return false;
+    }
+
+    return true;
 }
 
 function resetSelection() {
@@ -1114,6 +1238,7 @@ function showToast(type = 'success', title = 'Success', message = 'Everything wo
 
     toast.show();
 }
+
 function onPlayerTypeChange(val) {
     isFreeTrial = (val === 'FreeTrial');
 
@@ -1136,6 +1261,7 @@ function onPlayerTypeChange(val) {
     // Update remove buttons visibility
     updateRemoveButtons();
 }
+
 // Initialize calendar on page load
 document.addEventListener('DOMContentLoaded', function () {
     initCalendar();

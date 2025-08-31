@@ -37,61 +37,65 @@ class FrontEndService implements FrontEndInterface
      */
     public static function frontendView(): View|Application|Factory|\Illuminate\Contracts\Foundation\Application
     {
-        $appointments = Appointment::whereIn('appointment_status', ['Pending', 'Confirmed'])->get();
-        $bookedSlots = [];
 
-        foreach ($appointments as $appointment) {
-            $timePart = explode(',', $appointment->selected_time_slot)[0]; // e.g. "12:00 PM - 3:15 PM"
-            [$startTime, $endTime] = explode(' - ', $timePart);
 
-            // Convert to 24-hour format
-            $start = Carbon::createFromFormat('g:i A', trim($startTime))->format('H:i');
-            $end = Carbon::createFromFormat('g:i A', trim($endTime))->format('H:i');
+//        $appointments = Appointment::whereIn('appointment_status', ['Pending', 'Confirmed'])->get();
+//        $bookedSlots = [];
+//
+//        foreach ($appointments as $appointment) {
+//            $timePart = explode(',', $appointment->selected_time_slot)[0]; // e.g. "12:00 PM - 3:15 PM"
+//            [$startTime, $endTime] = explode(' - ', $timePart);
+//
+//            // Convert to 24-hour format
+//            $start = Carbon::createFromFormat('g:i A', trim($startTime))->format('H:i');
+//            $end = Carbon::createFromFormat('g:i A', trim($endTime))->format('H:i');
+//
+//            // Generate 15-minute interval slots
+//            $current = Carbon::createFromFormat('H:i', $start);
+//            $endObj = Carbon::createFromFormat('H:i', $end);
+//            $slots = [];
+//
+//            while ($current <= $endObj) {
+//                $slots[] = $current->format('H:i');
+//                $current->addMinutes(15);
+//            }
+//
+//            // Group by selected_date
+//            $date = $appointment->selected_date;
+//            if (!isset($bookedSlots[$date])) {
+//                $bookedSlots[$date] = [];
+//            }
+//
+//            $bookedSlots[$date] = array_values(array_unique(array_merge($bookedSlots[$date], $slots)));
+//        }
 
-            // Generate 15-minute interval slots
-            $current = Carbon::createFromFormat('H:i', $start);
-            $endObj = Carbon::createFromFormat('H:i', $end);
-            $slots = [];
-
-            while ($current <= $endObj) {
-                $slots[] = $current->format('H:i');
-                $current->addMinutes(15);
-            }
-
-            // Group by selected_date
-            $date = $appointment->selected_date;
-            if (!isset($bookedSlots[$date])) {
-                $bookedSlots[$date] = [];
-            }
-
-            $bookedSlots[$date] = array_values(array_unique(array_merge($bookedSlots[$date], $slots)));
-        }
-
-        $availablities = Availability::where('availability', 1)->get()->toArray();
-        $dayIndexes = [
-            'Sunday' => 0,
-            'Monday' => 1,
-            'Tuesday' => 2,
-            'Wednesday' => 3,
-            'Thursday' => 4,
-            'Friday' => 5,
-            'Saturday' => 6,
-        ];
-
-        $availablity = [];
-
-        foreach ($availablities as $value) {
-            $day = $value['day'];
-            if (isset($dayIndexes[$day])) {
-                $index = $dayIndexes[$day];
-                $availablity[$index] = [
-                    'startTime' => Carbon::createFromFormat('H:i:s', $value['start_time'])->format('H:i'),
-                    'endTime' => Carbon::createFromFormat('H:i:s', $value['end_time'])->format('H:i'),
-                ];
-            }
-        }
-
-        return view('frontend.app', ['bookedSlots' => $bookedSlots, 'availablity' => $availablity]);
+//        $availablities = Availability::where('is_active', 1)->get()->toArray();
+//        $dayIndexes = [
+//            'Sunday' => 0,
+//            'Monday' => 1,
+//            'Tuesday' => 2,
+//            'Wednesday' => 3,
+//            'Thursday' => 4,
+//            'Friday' => 5,
+//            'Saturday' => 6,
+//        ];
+//
+//        $availablity = [];
+//
+//        foreach ($availablities as $value) {
+//            $day = $value['day'];
+//            if (isset($dayIndexes[$day])) {
+//                $index = $dayIndexes[$day];
+//                $availablity[$index] = [
+//                    'startTime' => Carbon::createFromFormat('H:i:s', $value['start_time'])->format('H:i'),
+//                    'endTime' => Carbon::createFromFormat('H:i:s', $value['end_time'])->format('H:i'),
+//                ];
+//            }
+//        }
+        $availability = Availability::getMergedAvailability();
+        $coachNames = User::where('user_type', 'Coach')->where('coach_type', 'Normal Coach')->where('status', 1)->pluck('name')->toArray();
+//        dd($availability);
+        return view('frontend.app', ['bookedSlots' => [], 'availablity' => $availability, 'coachNames' => $coachNames]);
     }
 
 

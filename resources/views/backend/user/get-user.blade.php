@@ -43,8 +43,13 @@
                     <td>{{ $user['last_login'] }}</td>
                     <td>{{ $user['registration_date'] }}</td>
                     <td>
+                        @if ($user['status'] == 'active')
                         <a href="{{ route('updateUserView', $user['id']) }}" class="btn btn-sm btn-primary float-start"><i
                                 class="fa fa-pencil-alt"></i></a>
+
+                        <a href="{{ route('availabilityView', $user['id']) }}" class="btn btn-sm btn-primary float-start ms-2"><i
+                                class="fa fa-map-marked"></i> Set Availability</a>
+                        @endif
                         <form action="{{ route('deleteUser') }}" method="POST" style="display:inline-block;"
                               onsubmit="return confirm('Are you sure to delete this user?')">
                             @csrf

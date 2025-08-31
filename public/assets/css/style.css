@@ -798,3 +798,50 @@ body {
 .primary {
     background-color: #0d6efd !important;
 }
+.day-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+.day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+.time-slot {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 5px;
+}
+.time-inputs {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+}
+.btn-add-time, .btn-remove-time {
+    margin-left: 10px;
+}
+.btn-remove-time {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+.btn-add-time {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.day-checkbox {
+    margin-right: 8px;
+}

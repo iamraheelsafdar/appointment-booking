@@ -711,7 +711,7 @@ body {
 
 @media (max-width: 768px) {
     .stepper-steps {
-        flex-direction: column;
+        /*flex-direction: column;*/
         gap: 16px;
     }
 

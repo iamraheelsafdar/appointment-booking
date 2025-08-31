@@ -66,8 +66,9 @@ Route::group(['middleware' => ['logs']], function () {
                 Route::post('update-appointments', [AppointmentController::class, 'updateAppointments'])->name('updateAppointments');
 
 
-                Route::get('availability', [AvailabilityController::class, 'availabilityView'])->name('availabilityView');
+                Route::get('availability/{id}', [AvailabilityController::class, 'availabilityView'])->name('availabilityView');
                 Route::post('availability', [AvailabilityController::class, 'createAvailability'])->name('createAvailability');
+                Route::post('/delete-availability', [AvailabilityController::class, 'deleteAvailability'])->name('availability.destroy');
 
                 Route::get('transaction', [TransactionController::class, 'transactionView'])->name('transactionView');
 
