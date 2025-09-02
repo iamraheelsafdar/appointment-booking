@@ -46,7 +46,7 @@ const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
     initCalendar();
- 
+
     // Initialize player type controls
     const initialType = document.getElementById('playerType')?.value || 'Returning';
     onPlayerTypeChange(initialType);
@@ -307,7 +307,7 @@ function showTimeSlots(date) {
     const timePanel = document.getElementById('timePanel');
     const selectedDateChip = document.getElementById('selectedDateChip');
     const timeSlots = document.getElementById('timeSlots');
- 
+
     if (!timePanel || !selectedDateChip || !timeSlots) {
         return;
     }
@@ -418,7 +418,7 @@ function showTimeSlots(date) {
                     errorSlot.className = 'time-slot error-slot';
                     errorSlot.innerHTML = `
                         <div style="font-weight: 600; font-size: 12px; margin-bottom: 2px;">${formatTimeDisplay(timeStr)}</div>
-                        <div style="font-size: 8px; color: #ffc107;">Slot not available</div>
+                        <div style="font-size: 10px; color: #856404;">Slot not available</div>
                     `;
                     allSlotsContainer.appendChild(errorSlot);
                 }
@@ -564,7 +564,7 @@ function createTimeSlot(time, isBooked, coachName = null, bufferMinutes = 0, coa
     if (coachName) {
         slot.innerHTML = `
             <div class="time-slot-time" style="font-weight: 600; font-size: 14px; margin-bottom: 2px;">${timeText}</div>
-            <div style="font-size: 10px; color: #666;">${coachName}</div>
+            <div style="font-size: 10px; color: #fff; background-color: #000; border-radius: 10px;">${coachName}</div>
         `;
 
         slot.dataset.coachName = coachName;
@@ -693,7 +693,7 @@ function calculateAvailableTimeForSlot() {
     if (!selectedTime || !selectedDate) {
         return 60; // Default fallback
     }
- 
+
     // Get the time slots container to analyze available slots
      const timeSlotsContainer = document.getElementById('timeSlots');
      if (!timeSlotsContainer) {
@@ -950,6 +950,8 @@ function onPlayerTypeChange(val) {
     const freeTrialInfo = document.getElementById('freeTrialInfo');
     if (freeTrialInfo) {
         freeTrialInfo.style.display = isFreeTrial ? 'block' : 'none';
+        freeTrialInfo.style.fontSize = isFreeTrial ? '12px' : '0';
+        freeTrialInfo.style.position = isFreeTrial ? 'absolute' : 'relative';
     }
 
     // Enforce a single lesson for Free Trial
@@ -1058,23 +1060,23 @@ function updateLesson(lessonId, field, value) {
                 }
                 return sum + (l.duration || 0);
             }, 0);
-            
+
             if (totalDuration > 60) {
                 // Rollback the change
                 lesson[field] = originalValue;
-                
+
                 showToast('warning', 'Duration Limit Exceeded', `Free trial players cannot exceed 60 minutes total duration. Current total would be: ${totalDuration} minutes.`);
-                
+
                 // Reset the form field to original value
                 const durationSelect = document.querySelector(`[onchange*="updateLesson(${lessonId}, 'duration'"]`);
                 if (durationSelect) {
                     durationSelect.value = originalValue;
                 }
-                
+
                 return;
             }
         }
-        
+
         const validation = validateLessonDuration();
 
         if (!validation.valid) {
@@ -1109,7 +1111,7 @@ function generateDurationOptions(selectedDuration) {
     let options = '';
     const isFreeTrial = document.getElementById('playerType')?.value === 'FreeTrial';
     const maxDuration = isFreeTrial ? 60 : 120;
-    
+
     for (let i = adminSettings.timeInterval; i <= maxDuration; i += adminSettings.timeInterval) {
         const selected = i === selectedDuration ? 'selected' : '';
         options += `<option value="${i}" ${selected}>${i} minutes</option>`;
@@ -1189,7 +1191,7 @@ function updateAllCalculations() {
     // Update time validation display
     updateTimeValidationDisplay(totalDuration);
 
-    
+
 
     if (currentStep === 2) {
         generateSummary();
@@ -1231,7 +1233,7 @@ function validateLessonDuration() {
 function updateTimeValidationDisplay(totalDuration) {
      const timeValidationDisplay = document.getElementById('timeValidationDisplay');
      const timeValidationText = document.getElementById('timeValidationText');
- 
+
      if (!timeValidationDisplay || !timeValidationText) {
          return;
      }

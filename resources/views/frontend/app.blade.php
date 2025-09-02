@@ -125,7 +125,7 @@
 
 
 
-                        <div class="form-group">
+                        <div class="form-group position-relative">
                             <label class="form-label">Player Type</label>
                             <select class="form-control" id="playerType" onchange="onPlayerTypeChange(this.value)">
                                 <option value="Returning">Returning Player</option>
@@ -265,6 +265,37 @@
     window.coaches = @json($coaches);
     window.coachAvailability = @json($coachAvailability);
     window.adminGoogleConnected = @json($adminGoogleConnected);
+
+    // Define initGoogleMaps function before Google Maps API loads
+    function initGoogleMaps() {
+        // Initialize address autocomplete
+        const addressInput = document.getElementById('address');
+        if (addressInput && window.google && window.google.maps && window.google.maps.places) {
+            const autocomplete = new google.maps.places.Autocomplete(addressInput, {
+                types: ['address'],
+                componentRestrictions: { country: 'AU' }
+            });
+
+            autocomplete.addListener('place_changed', function() {
+                const place = autocomplete.getPlace();
+                if (place.geometry) {
+                    // Fill in address components
+                    for (const component of place.address_components) {
+                        const type = component.types[0];
+                        if (type === 'locality') {
+                            document.getElementById('city').value = component.long_name;
+                        } else if (type === 'administrative_area_level_1') {
+                            document.getElementById('state').value = component.long_name;
+                        } else if (type === 'postal_code') {
+                            document.getElementById('postalCode').value = component.long_name;
+                        } else if (type === 'country') {
+                            document.getElementById('country').value = component.long_name;
+                        }
+                    }
+                }
+            });
+        }
+    }
 </script>
 <script src="{{asset('assets/js/front-script.js')}}?v={{time()}}&r={{rand(1000,9999)}}&debug={{time()}}"></script>
 </body>
