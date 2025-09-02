@@ -24,4 +24,8 @@ class Appointment extends Model
         return $this->hasOne(User::class, 'id', 'coach_id');
     }
 
+    public function lessons(): HasMany
+    {
+        return $this->hasMany(Lesson::class, 'appointment_id', 'id');
+    }
 }

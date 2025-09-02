@@ -218,7 +218,7 @@
 
             <!-- Stepper Actions -->
             <div class="stepper-actions">
-                <button type="button" class="btn-secondary" id="prevBtn" onclick="previousStep()"
+                <button type="button" class="btn-secondary" id="prevBtn" onclick="prevStep()"
                         style="display: none;">
                     <i class="fas fa-arrow-left"></i> Previous
                 </button>

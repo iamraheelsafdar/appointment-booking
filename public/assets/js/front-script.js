@@ -952,6 +952,7 @@ function generateSummary() {
 
     const totalPrice = lessons.reduce((sum, lesson) => sum + calculateLessonPrice(lesson), 0);
     const totalDuration = lessons.reduce((sum, lesson) => sum + lesson.duration, 0);
+    const isFreeTrial = document.getElementById('playerType')?.value === 'FreeTrial';
 
     const dateStr = selectedDate.toLocaleDateString('en-US', {
         weekday: 'long',
@@ -971,8 +972,8 @@ function generateSummary() {
             <h6><i class="fas fa-list"></i> Lessons</h6>
             ${lessons.map((lesson, index) => `
                 <div class="lesson-summary">
-                    <strong>Lesson ${index + 1}:</strong> ${lesson.type} - ${lesson.duration} minutes - ${lesson.players} player${lesson.players !== 1 ? 's' : ''}
-                    <span class="lesson-price">$${calculateLessonPrice(lesson)}</span>
+                    <p><strong>Lesson ${index + 1}:</strong> ${lesson.type} - ${lesson.duration} minutes - ${lesson.players} player${lesson.players !== 1 ? 's' : ''}
+                    ${!isFreeTrial ? `<span class="lesson-price">$${calculateLessonPrice(lesson)}</span>` : ''}</p>
                 </div>
             `).join('')}
         </div>
@@ -980,7 +981,7 @@ function generateSummary() {
         <div class="summary-section">
             <h6><i class="fas fa-calculator"></i> Total</h6>
             <p><strong>Duration:</strong> ${totalDuration} minutes</p>
-            <p><strong>Total Price:</strong> $${totalPrice}</p>
+            ${!isFreeTrial ? `<p><strong>Total Price:</strong> $${totalPrice}</p>` : '<p><strong>Total Price:</strong> <span class="text-success">FREE TRIAL</span></p>'}
         </div>
     `;
 
@@ -990,6 +991,7 @@ function generateSummary() {
 function generateDetailedBookingSummary() {
     const totalPrice = lessons.reduce((sum, lesson) => sum + calculateLessonPrice(lesson), 0);
     const totalDuration = lessons.reduce((sum, lesson) => sum + lesson.duration, 0);
+    const isFreeTrial = document.getElementById('playerType')?.value === 'FreeTrial';
 
     const dateStr = selectedDate.toLocaleDateString('en-US', {
         weekday: 'long',
@@ -1020,7 +1022,11 @@ function generateDetailedBookingSummary() {
     summary += `Date: ${dateStr}\n`;
     summary += `Time: ${formatTimeDisplay(selectedTime)}\n`;
     summary += `Duration: ${totalDuration} minutes\n`;
-    summary += `Total Price: $${totalPrice.toFixed(2)}\n\n`;
+    if (!isFreeTrial) {
+        summary += `Total Price: $${totalPrice.toFixed(2)}\n\n`;
+    } else {
+        summary += "Total Price: FREE TRIAL\n\n";
+    }
 
     // Lessons Details
     summary += "LESSONS DETAILS\n";
@@ -1047,7 +1053,8 @@ function submitBooking() {
     const totalMinutes = lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0);
 
     // Calculate total price
-    const totalPrice = lessons.reduce((sum, lesson) => sum + calculateLessonPrice(lesson), 0);
+    const isFreeTrial = document.getElementById('playerType')?.value === 'FreeTrial';
+    const totalPrice = isFreeTrial ? 0 : lessons.reduce((sum, lesson) => sum + calculateLessonPrice(lesson), 0);
 
     // Format time slot string
     const timeSlotStr = selectedDate && selectedTime ?
@@ -1075,9 +1082,12 @@ function submitBooking() {
         selectedDate: selectedDate ? formatDate(selectedDate) : null,
         selectedTimeSlot: timeSlotStr,
         totalMinutes: totalMinutes,
-        bookingTotalPrice: totalPrice.toFixed(2),
-        totalAmount: totalPrice.toFixed(2),
+        bookingTotalPrice: isFreeTrial ? '0.00' : totalPrice.toFixed(2),
+        totalAmount: isFreeTrial ? '0.00' : totalPrice.toFixed(2),
         bookingSummary: bookingSummary,
+        selectedCoachId: window.selectedCoachId || null,
+        selectedCoachName: window.selectedCoachName || null,
+        selectedBufferMinutes: window.selectedBufferMinutes || 0,
         lessons: lessons.map(lesson => ({
             type: lesson.type,
             duration: lesson.duration,
