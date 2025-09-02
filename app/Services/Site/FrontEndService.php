@@ -94,16 +94,16 @@ class FrontEndService implements FrontEndInterface
 //        }
         // Get merged availability for backward compatibility
         $availability = Availability::getMergedAvailability();
-        
+
         // Get individual coach availability - only coaches with Google Calendar connected
         $coaches = User::where('user_type', 'Coach')
             ->where('coach_type', 'Normal Coach')
             ->where('status', 1)
             ->whereHas('google') // Only coaches with Google Calendar connected
             ->get(['id', 'name']);
-        
+
         $coachNames = $coaches->pluck('name')->toArray();
-        
+
         // Get individual coach availability with buffer minutes
         $coachAvailability = [];
         foreach ($coaches as $coach) {
@@ -112,7 +112,7 @@ class FrontEndService implements FrontEndInterface
                 ->orderBy('day')
                 ->orderBy('start_time')
                 ->get();
-            
+
             if ($availabilityData->count() > 0) {
                 $availabilityByDay = $availabilityData
                     ->groupBy('day')
@@ -128,14 +128,14 @@ class FrontEndService implements FrontEndInterface
                         ];
                     })
                     ->toArray();
-                
+
                 // Convert day names to day numbers for JavaScript compatibility
                 $convertedAvailability = [];
                 foreach ($availabilityByDay as $dayName => $dayData) {
                     $dayNumber = Availability::getDayNumber($dayName);
                     $convertedAvailability[$dayNumber] = $dayData;
                 }
-                
+
                 $coachAvailability[$coach->id] = [
                     'id' => $coach->id,
                     'name' => $coach->name,
@@ -143,7 +143,7 @@ class FrontEndService implements FrontEndInterface
                 ];
             }
         }
-        
+
         // If no individual coach availability, create default availability
         if (empty($coachAvailability)) {
             // Create default availability for each coach based on merged availability
@@ -157,27 +157,27 @@ class FrontEndService implements FrontEndInterface
                 ];
             }
         }
-        
+
         // Get actual booked slots from appointments with coach information
-        $appointments = Appointment::whereIn('appointment_status', ['Pending', 'Confirmed'])
+        $appointments = Appointment::whereIn('appointment_status', ['Confirmed'])
             ->whereDate('selected_date', '>=', Carbon::today())
             ->with('coach')
             ->get();
-        
+
         $bookedSlots = [];
         foreach ($appointments as $appointment) {
             $date = $appointment->selected_date;
             $timeSlot = $appointment->selected_time_slot;
             $coachId = $appointment->coach_id;
-            
+
             if (!isset($bookedSlots[$date])) {
                 $bookedSlots[$date] = [];
             }
-            
+
             if (!isset($bookedSlots[$date][$coachId])) {
                 $bookedSlots[$date][$coachId] = [];
             }
-            
+
             // Store the full time slot and customer info per coach
             $bookedSlots[$date][$coachId][] = [
                 'time' => $timeSlot,
@@ -189,15 +189,15 @@ class FrontEndService implements FrontEndInterface
                 'totalMinutes' => $appointment->total_minutes ?? 0
             ];
         }
-        
 
-        
+
+
         // Check if admin has Google Calendar connected
         $admin = User::where('user_type', 'Admin')->first();
         $adminGoogleConnected = $admin && $admin->google;
-        
+
         return view('frontend.app', [
-            'bookedSlots' => $bookedSlots, 
+            'bookedSlots' => $bookedSlots,
             'availablity' => $availability, // Keep for backward compatibility
             'coachNames' => $coachNames,
             'coaches' => $coaches,
@@ -241,34 +241,34 @@ class FrontEndService implements FrontEndInterface
                     ->where('status', 1)
                     ->whereHas('google')
                     ->first();
-                
+
                 if (!$coach) {
                     return response()->json(['errors' => ['Selected coach is not available.']], 422);
                 }
-                
+
                 // Validate time against buffer minutes and check for conflicts
                 if (!empty($request->selectedBufferMinutes)) {
                     $totalLessonTime = collect($request->lessons)->sum('duration');
                     $availableTime = 60 - $request->selectedBufferMinutes; // Assuming 1-hour slots
-                    
+
                     if ($totalLessonTime > $availableTime) {
                         return response()->json(['errors' => ['Total lesson time exceeds available slot time considering buffer minutes.']], 422);
                     }
                 }
-                
+
                 // Check for time slot conflicts with existing bookings
                 $conflictingBookings = Appointment::where('coach_id', $coach->id)
                     ->where('selected_date', $request->selectedDate)
                     ->whereIn('appointment_status', ['Pending', 'Confirmed'])
                     ->get();
-                
+
                 foreach ($conflictingBookings as $existingBooking) {
                     $existingStartTime = Carbon::createFromFormat('g:i A', explode(' - ', $existingBooking->selected_time_slot)[0]);
                     $existingEndTime = Carbon::createFromFormat('g:i A', explode(' - ', $existingBooking->selected_time_slot)[1]);
-                    
+
                     $newStartTime = Carbon::createFromFormat('g:i A', $request->selectedTimeSlot);
                     $newEndTime = $newStartTime->copy()->addMinutes($totalLessonTime);
-                    
+
                     // Check if there's any overlap
                     if ($newStartTime < $existingEndTime && $newEndTime > $existingStartTime) {
                         return response()->json(['errors' => ['Selected time slot conflicts with existing booking. Please choose a different time.']], 422);
@@ -295,19 +295,19 @@ class FrontEndService implements FrontEndInterface
                 Lesson::create((new CreateLessonsDTO($appointmentId->id, $lesson))->toArray());
             }
             DB::commit();
-            
+
             // Check if it's a free trial player
             if ($request->playerType === 'FreeTrial') {
                 // Load the appointment with relationships for free trial processing
                 $appointment = Appointment::with(['coach', 'lessons'])->find($appointmentId->id);
-                
+
                 if ($appointment) {
                     // Process free trial booking (send emails and create calendar events)
                     self::processFreeTrialBooking($request, $appointment);
                 } else {
                     \Log::error('Failed to load appointment for free trial processing. Appointment ID: ' . $appointmentId->id);
                 }
-                
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Free trial appointment booked successfully!',
@@ -315,7 +315,7 @@ class FrontEndService implements FrontEndInterface
                     'is_free_trial' => true
                 ]);
             }
-            
+
             // For regular players, proceed with payment
             return self::performPayment($request, $appointmentId->id);
 //            return response()->json(['message' => 'Appointment booked successfuly']);
@@ -404,12 +404,12 @@ class FrontEndService implements FrontEndInterface
                         if (isset($request->bookingSummary) && !empty($request->bookingSummary)) {
                             $bookingDetails = $request->bookingSummary;
                         }
-                        
+
                         // If still no booking details, generate them from the appointment
                         if (empty($bookingDetails) && $transaction->appointment) {
                             $bookingDetails = self::generateBookingDetailsFromAppointment($transaction->appointment);
                         }
-                        
+
                         AppointmentBookingjob::dispatch($customerName->name, $customerName->email, $bookingDetails);
                         AppointmentReceivingjob::dispatch($admin->name, $admin->email, $bookingDetails);
                         // Update related appointment
@@ -452,13 +452,13 @@ class FrontEndService implements FrontEndInterface
     {
         try {
             $client = Helper::getGoogleClientForUser($user);
-            
+
             // Check if client is a string (error message)
             if (is_string($client)) {
                 \Log::error('Google Calendar connection error: ' . $client);
                 return;
             }
-            
+
             $calendarService = new Google_Service_Calendar($client);
 
         // Example: "8:00 AM - 8:30 AM, Mon, Aug 4, 2025"
@@ -546,10 +546,10 @@ class FrontEndService implements FrontEndInterface
     {
         try {
             \Log::info('Starting free trial booking processing for appointment ID: ' . $appointment->id);
-            
+
             $admin = User::where('user_type', 'Admin')->first();
             \Log::info('Admin found: ' . ($admin ? $admin->id : 'No admin found'));
-            
+
             // Prepare booking details for emails
             $bookingDetails = "Free Trial Booking\n";
             $bookingDetails .= "Date: " . $request->selectedDate . "\n";
@@ -558,25 +558,25 @@ class FrontEndService implements FrontEndInterface
             $bookingDetails .= "Email: " . $request->email . "\n";
             $bookingDetails .= "Address: " . $request->address . "\n";
             $bookingDetails .= "Coach: " . ($appointment->coach ? $appointment->coach->name : 'Not assigned') . "\n";
-            
+
             if (!empty($request->lessons)) {
                 $bookingDetails .= "Lessons:\n";
                 foreach ($request->lessons as $lesson) {
                     $bookingDetails .= "- " . $lesson['type'] . " (" . $lesson['duration'] . " min)\n";
                 }
             }
-            
+
             \Log::info('Booking details prepared: ' . $bookingDetails);
-            
+
             // Send emails
             \Log::info('Dispatching player email to: ' . $request->email);
             AppointmentBookingjob::dispatch($request->fullName, $request->email, $bookingDetails);
-            
+
             if ($admin) {
                 \Log::info('Dispatching admin email to: ' . $admin->email);
                 AppointmentReceivingjob::dispatch($admin->name, $admin->email, $bookingDetails);
             }
-            
+
             // Create Google Calendar event for admin if connected
             if ($admin && $admin->google) {
                 \Log::info('Creating Google Calendar event for admin: ' . $admin->id);
@@ -584,12 +584,12 @@ class FrontEndService implements FrontEndInterface
                 $mockTransaction->id = 'free-trial-admin-' . $appointment->id;
                 $mockTransaction->description = $bookingDetails;
                 $mockTransaction->appointment = $appointment;
-                
+
                 self::assignToGoogleCalender($admin, $mockTransaction);
             } else {
                 \Log::info('Admin Google Calendar not connected or admin not found');
             }
-            
+
             // Create Google Calendar event if coach has Google Calendar connected
             if ($appointment->coach && $appointment->coach->google) {
                 \Log::info('Creating Google Calendar event for coach: ' . $appointment->coach->id);
@@ -598,16 +598,16 @@ class FrontEndService implements FrontEndInterface
                 $mockTransaction->id = 'free-trial-coach-' . $appointment->id;
                 $mockTransaction->description = $bookingDetails;
                 $mockTransaction->appointment = $appointment;
-                
+
                 self::assignToGoogleCalender($appointment->coach, $mockTransaction);
             } else {
                 \Log::info('Coach Google Calendar not connected or coach not found. Coach: ' . ($appointment->coach ? $appointment->coach->id : 'No coach'));
             }
-            
+
             // Update appointment status to confirmed for free trials
             $appointment->update(['appointment_status' => 'Confirmed']);
             \Log::info('Free trial booking processing completed successfully for appointment ID: ' . $appointment->id);
-            
+
         } catch (\Exception $e) {
             \Log::error('Free trial booking processing failed: ' . $e->getMessage());
             \Log::error('Appointment ID: ' . $appointment->id);
