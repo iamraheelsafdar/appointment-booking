@@ -8,6 +8,7 @@ use Carbon\CarbonPeriod;
 use Google\Service\Exception;
 use Google_Client;
 use Google_Service_Calendar;
+use Google_Service_Oauth2;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response as ResponseAlias;
 use App\DTOs\RequestHandling\ErrorLogsDTO;
@@ -84,6 +85,12 @@ class Helper
         $client = new Google_Client();
         $client->setClientId(env('GOOGLE_CLIENT_ID'));
         $client->setClientSecret(env('GOOGLE_CLIENT_SECRET'));
+        $client->setScopes([
+            Google_Service_Calendar::CALENDAR_EVENTS,
+            Google_Service_Calendar::CALENDAR_READONLY,
+            Google_Service_Oauth2::USERINFO_EMAIL,
+            Google_Service_Oauth2::USERINFO_PROFILE,
+        ]);
         $client->setAccessToken([
             'access_token' => $tokenData->access_token,
             'refresh_token' => $tokenData->refresh_token,
@@ -99,6 +106,21 @@ class Helper
                 'expires_in' => $newToken['expires_in'],
             ]);
             $client->setAccessToken($newToken);
+        }
+        
+        // Check if the token has the required scopes
+        $requiredScopes = [
+            'https://www.googleapis.com/auth/calendar.events',
+            'https://www.googleapis.com/auth/calendar.readonly'
+        ];
+        
+        $tokenScopes = explode(' ', $tokenData->scope ?? '');
+        $hasRequiredScopes = array_intersect($requiredScopes, $tokenScopes);
+        
+        if (empty($hasRequiredScopes)) {
+            // Token doesn't have required scopes, need to re-authenticate
+            session()->flash('errors', 'Google Calendar permissions need to be updated. Please reconnect your Google Calendar.');
+            return route('redirectToGoogle');
         }
 
         return $client;

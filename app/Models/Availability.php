@@ -22,7 +22,7 @@ class Availability extends Model
         return $this->belongsTo(User::class);
     }
 
-    private static function getDayNumber($dayName)
+    public static function getDayNumber($dayName)
     {
         $days = [
             'Monday' => 1,

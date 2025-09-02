@@ -30,13 +30,16 @@ class AppointmentRequest extends BaseRequestApi
             'postalCode' => 'required|max:150',
             'state' => 'required|max:150',
             'suburb' => 'required|max:150',
-            'description' => 'max:150',
             'email' => 'required|email|max:150',
             'fullName' => 'required|max:150',
             'selectedDate' => 'required',
             'selectedTimeSlot' => 'required',
             'totalMinutes' => 'required',
             'lessons' => 'required|array',
+            'playerType' => 'required|in:Returning,FreeTrial',
+            'selectedCoach' => 'nullable|string',
+            'selectedCoachId' => 'nullable|integer|exists:users,id',
+            'selectedBufferMinutes' => 'nullable|integer|min:0|max:60',
         ];
     }
 }

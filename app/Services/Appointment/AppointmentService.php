@@ -75,6 +75,13 @@ class AppointmentService implements AppointmentInterface
         try {
             DB::beginTransaction();
             $appointment = Appointment::find($request->id);
+            
+            // Check if admin has already cancelled this appointment
+            if ($appointment->appointment_status === 'Cancelled' && auth()->user()->user_type === 'Admin') {
+                session()->flash('error', "Cannot change status of a cancelled appointment.");
+                return redirect()->back();
+            }
+            
             if ($request->appointment_status == 'Declined' || $request->appointment_status == 'Rejected') {
 
                 if ($appointment->google_event_id) {

@@ -9,7 +9,7 @@
                         <i class="fa fa-user"></i>
                     </div>
                     <div class="card-body">
-                        <h5 class="card-title ms-1">Totol Number Of Users</h5>
+                        <h5 class="card-title ms-1">Totol Number Of Coaches</h5>
                         <p class="card-text mb-5 ms-1">{{$total['user_count']}}</p>
 
                         <a href="{{route('getUser')}}"

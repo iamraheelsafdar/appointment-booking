@@ -102,7 +102,7 @@ body {
 }
 
 .calendar-date {
-    min-height: 60px;
+    min-height: 72px;
     border-right: 1px solid #e8eaed;
     border-bottom: 1px solid #e8eaed;
     padding: 8px;
@@ -198,6 +198,20 @@ body {
     background-color: #ea4335;
 }
 
+.availability-indicator.fully-booked {
+    background-color: #ea4335;
+}
+
+.calendar-date.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.calendar-date.disabled .availability-indicator {
+    background-color: #6c757d;
+}
+
 .time-selection-panel {
     background: white;
     border-radius: 8px;
@@ -235,7 +249,7 @@ body {
 }
 
 .time-slot {
-    padding: 12px 16px;
+    padding: 6px 10px;
     border: 1px solid #dadce0;
     border-radius: 4px;
     text-align: center;
@@ -272,9 +286,27 @@ body {
 .time-slot.booked {
     background-color: #fce8e6;
     border-color: #ea4335;
-    color: #d93025;
+    color: #ea4335;
+    align-self: center;
+}
+
+.time-slot.error-slot {
+    background-color: #fff3cd;
+    border-color: #ffc107;
+    color: #856404;
     cursor: not-allowed;
-    position: relative;
+    align-self: center;
+}
+
+.coach-slots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 15px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 20px;
 }
 
 .time-slot.booked:hover {
@@ -626,6 +658,207 @@ body {
     gap: 20px;
 }
 
+.lessons-section {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    border: 2px solid #e9ecef;
+}
+
+.lessons-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 24px;
+    color: #06402b;
+}
+
+.lessons-header i {
+    font-size: 24px;
+    margin-right: 12px;
+}
+
+.lessons-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.lessons-section {
+    margin-top: 30px;
+}
+
+.lessons-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.lessons-header i {
+    color: #34a853;
+    font-size: 20px;
+}
+
+.lessons-header h3 {
+    margin: 0;
+    color: #06402b;
+    font-weight: 600;
+}
+
+.lesson-card {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.lesson-item {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.lesson-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.lesson-header h6 {
+    margin: 0;
+    color: #06402b;
+    font-weight: 600;
+}
+
+.lesson-title {
+    color: #06402b;
+    font-weight: 600;
+    font-size: 16px;
+    margin: 0;
+}
+
+.btn-remove-lesson {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.btn-remove-lesson:hover {
+    background: #c82333;
+}
+
+.remove-lesson-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.remove-lesson-btn:hover {
+    background: #c82333;
+}
+
+.lesson-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.lesson-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.lesson-price {
+    grid-column: 1 / -1;
+    text-align: right;
+    padding-top: 12px;
+    border-top: 1px solid #e9ecef;
+    color: #06402b;
+    font-size: 16px;
+}
+
+.add-lesson-btn {
+    background: #34a853;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s;
+}
+
+.add-lesson-btn:hover {
+    background: #2d8f47;
+}
+
+/* Confirm Booking Button Styles */
+.btn-success {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 15px 30px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #218838, #1ea085);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+.btn-success:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(40, 167, 69, 0.3);
+}
+
+.btn-success:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-success i {
+    font-size: 18px;
+}
+
 /* Toast Styles */
 /*.toast {*/
 /*    border: none;*/
@@ -735,4 +968,25 @@ body {
     .customer-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* Coach Sections - Horizontal Layout with Bottom Margins */
+.coach-slots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 15px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+/* Hide coach headers completely */
+.coach-header {
+    display: none !important;
+}
+
+.coach-header h4 {
+    display: none !important;
 }

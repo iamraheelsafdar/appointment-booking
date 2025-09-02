@@ -19,4 +19,14 @@ class TransactionController extends Controller
     {
         return TransactionService::transactionView($request);
     }
+
+    /**
+     * Update transaction status manually
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateTransactionStatus(Request $request): \Illuminate\Http\JsonResponse
+    {
+        return TransactionService::updateTransactionStatus($request);
+    }
 }

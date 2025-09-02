@@ -7,28 +7,12 @@ const adminSettings = {
     coachAvailability: window.coachAvailability || {}
 };
 
-// Tennis lesson pricing
+// Updated pricing structure
 const rateStructure = {
-    "Private": {
-        hourly: 90,
-        "45min": 70,
-        "30min": 50
-    },
-    "Semi-Private": {
-        hourly: 50,
-        "45min": 40,
-        "30min": 30
-    },
-    "Group": {
-        hourly: 35,
-        "45min": 30,
-        "30min": 25
-    },
-    "Cardio Tennis": {
-        hourly: 25,
-        "45min": 20,
-        "30min": 15
-    }
+    "Private": { hourly: 105, "45min": 85, "30min": 65 },
+    "Semi-Private": { hourly: 60, "45min": 50, "30min": 40 },
+    "Group": { hourly: 45, "45min": 35, "30min": 25 },
+    "Cardio Tennis": { hourly: 30, "45min": 25, "30min": 20 }
 };
 
 const playerLimits = {
@@ -50,81 +34,24 @@ const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== DEBUGGING ISSUES ===');
+    console.log('Booked slots:', adminSettings.bookedSlots);
+    console.log('Coach availability:', adminSettings.coachAvailability);
+
+    // Test the specific booking
+    const testDate = '2025-09-01';
+    const testTime = '22:00'; // 10:00 PM
+
+    if (adminSettings.bookedSlots[testDate]) {
+        console.log('Bookings for Sept 1:', adminSettings.bookedSlots[testDate]);
+
+        // Test booking check
+        const isBooked = checkIfTimeSlotBookedForCoach(testTime, testDate, 2);
+        console.log(`Is 10:00 PM booked for coach 2? ${isBooked}`);
+    }
+
     initCalendar();
-
-    // Initialize player type controls
-    const initialType = document.getElementById('playerType')?.value || 'Returning';
-    onPlayerTypeChange(initialType);
 });
-
-// Google Maps API callback function
-function initGoogleMaps() {
-    initAddressAutocomplete();
-}
-
-// Initialize Google Places Autocomplete
-function initAddressAutocomplete() {
-    const addressInput = document.getElementById('address');
-    if (!addressInput) return;
-
-    // Define Melbourne bounds
-    const melbourneBounds = new google.maps.LatLngBounds(
-        new google.maps.LatLng(-37.9, 144.8), // Southwest corner
-        new google.maps.LatLng(-37.6, 145.2)  // Northeast corner
-    );
-
-    const autocomplete = new google.maps.places.Autocomplete(addressInput, {
-        types: ['address'],
-        componentRestrictions: {country: 'AU'},
-        bounds: melbourneBounds,
-        strictBounds: true,
-        fields: ['address_components', 'formatted_address', 'geometry']
-    });
-
-    // Listen for place selection
-    autocomplete.addListener('place_changed', function () {
-        const place = autocomplete.getPlace();
-
-        if (!place.address_components) {
-            return;
-        }
-
-        // Check if within Melbourne area
-        if (place.geometry && place.geometry.location) {
-            const lat = place.geometry.location.lat();
-            const lng = place.geometry.location.lng();
-
-            if (lat < -37.9 || lat > -37.6 || lng < 144.8 || lng > 145.2) {
-                showToast('warning', 'Location Error', 'Please select an address within Melbourne area only.');
-                addressInput.value = '';
-                return;
-            }
-        }
-
-        // Set default values
-        document.getElementById('suburb').value = 'Toorak';
-        document.getElementById('city').value = 'Melbourne';
-        document.getElementById('state').value = 'Victoria';
-        document.getElementById('country').value = 'Australia';
-
-        // Parse postal code
-        const addressComponents = place.address_components;
-        for (const component of addressComponents) {
-            if (component.types[0] === 'postal_code') {
-                document.getElementById('postalCode').value = component.long_name;
-                break;
-            }
-        }
-
-        // Validate postal code
-        const postalCode = document.getElementById('postalCode').value;
-        if (postalCode && (parseInt(postalCode) < 3000 || parseInt(postalCode) > 3999)) {
-            showToast('warning', 'Location Error', 'Please select an address within Melbourne area only.');
-            addressInput.value = '';
-            document.getElementById('postalCode').value = '';
-        }
-    });
-}
 
 function initCalendar() {
     renderCalendar();
@@ -369,7 +296,7 @@ function showTimeSlots(date) {
 
                                 // Check if there's enough time for this slot
                                 const remainingTime = (startMinutes + availableMinutes) - minutes;
-                                const hasEnoughTime = remainingTime > adminSettings.timeInterval;
+                                const hasEnoughTime = remainingTime >= adminSettings.timeInterval;
 
                                 if (hasEnoughTime) {
                                     slots += `<div class="time-slot ${isBooked ? 'booked' : 'available'}">${formatTimeDisplay(timeStr)}</div>`;
@@ -403,7 +330,9 @@ function showTimeSlots(date) {
             const bufferMinutes = chunk.bufferMinutes || 0;
             const availableMinutes = endMinutes - startMinutes - bufferMinutes;
 
+            console.log(`Buffer minutes for ${coach.name}: ${bufferMinutes}`);
 
+            console.log(`Coach ${coach.name}: Start=${chunk.startTime} (${timeToMinutes(chunk.startTime)}), End=${chunk.endTime} (${timeToMinutes(chunk.endTime)}), Buffer=${bufferMinutes}, Available=${availableMinutes}`);
 
             for (let minutes = startMinutes; minutes < endMinutes; minutes += adminSettings.timeInterval) {
                 const timeStr = minutesToTime(minutes);
@@ -413,12 +342,16 @@ function showTimeSlots(date) {
 
                 // Check if there's enough time for this slot (slot duration should be less than remaining time)
                 const remainingTime = availableEndMinutes - minutes;
-                const hasEnoughTime = remainingTime > adminSettings.timeInterval;
+                const hasEnoughTime = remainingTime >= adminSettings.timeInterval;
+
+                console.log(`Time: ${timeStr}, Remaining: ${remainingTime}, HasEnough: ${hasEnoughTime}, Required: ${adminSettings.timeInterval}`);
 
                 if (hasEnoughTime) {
+                    console.log(`Creating normal slot for ${timeStr}, Booked: ${isBooked}`);
                     const slot = createTimeSlot(timeStr, isBooked, coach.name, bufferMinutes, coach.id);
                     allSlotsContainer.appendChild(slot);
                 } else {
+                    console.log(`Creating error slot for ${timeStr} - Slot not available (remaining time: ${remainingTime} < ${adminSettings.timeInterval})`);
                     // Show error for last slot
                     const errorSlot = document.createElement('div');
                     errorSlot.className = 'time-slot error-slot';
@@ -448,16 +381,26 @@ function checkIfTimeSlotBookedForCoach(timeStr, dateKey, coachId) {
     // Convert coachId to string for comparison (in case it's stored as string in backend)
     const coachIdStr = String(coachId);
 
+    console.log(`Checking booking: ${timeStr} for coach ${coachIdStr} on ${dateKey}`);
+
     if (!adminSettings.bookedSlots[dateKey] || !adminSettings.bookedSlots[dateKey][coachIdStr]) {
+        console.log(`No bookings found for coach ${coachIdStr} on ${dateKey}`);
         return false;
     }
 
+    console.log(`Found bookings:`, adminSettings.bookedSlots[dateKey][coachIdStr]);
+
     return adminSettings.bookedSlots[dateKey][coachIdStr].some(booking => {
+        console.log(`Checking booking:`, booking);
+
         if (typeof booking === 'string') {
-            return booking === timeStr;
+            const isMatch = booking === timeStr;
+            console.log(`String match: ${isMatch}`);
+            return isMatch;
         } else if (booking && booking.time) {
             // Handle time range (e.g., "10:00 PM - 11:30 PM")
             const timeRange = booking.time;
+            console.log(`Time range: ${timeRange}`);
 
             if (timeRange.includes(' - ')) {
                 // Handle time range with date (e.g., "10:00 PM - 11:30 PM, Mon, Sep 1, 2025")
@@ -467,12 +410,18 @@ function checkIfTimeSlotBookedForCoach(timeStr, dateKey, coachId) {
                 const bookingStart = formatTimeForComparison(startTime);
                 const bookingEnd = formatTimeForComparison(endTime);
 
+                console.log(`Comparing: ${currentTime} >= ${bookingStart} && ${currentTime} < ${bookingEnd}`);
+
                 // Check if current time slot falls within the booking range
-                return currentTime >= bookingStart && currentTime < bookingEnd;
+                const isBooked = currentTime >= bookingStart && currentTime < bookingEnd;
+                console.log(`Range match: ${isBooked}`);
+                return isBooked;
             } else {
                 // Single time slot (might also include date)
                 const startTime = booking.time.includes(',') ? booking.time.split(',')[0] : booking.time;
-                return formatTimeForComparison(startTime) === formatTimeForComparison(timeStr);
+                const isMatch = formatTimeForComparison(startTime) === formatTimeForComparison(timeStr);
+                console.log(`Single time match: ${isMatch}`);
+                return isMatch;
             }
         }
         return false;
@@ -630,10 +579,8 @@ function addNewLesson() {
     const lesson = {
         id: lessonIdCounter++,
         type: 'Private',
-        duration: adminSettings.timeInterval,
-        players: 1,
-        ballLevel: '',
-        description: ''
+        duration: 30,
+        players: 1
     };
     lessons.push(lesson);
     renderLessons();
@@ -641,117 +588,9 @@ function addNewLesson() {
 }
 
 function removeLesson(lessonId) {
-    if (lessons.length > 1) {
-        lessons = lessons.filter(l => l.id !== lessonId);
-
-        const lessonCard = document.querySelector(`[data-lesson-id="${lessonId}"]`);
-        if (lessonCard) lessonCard.remove();
-
-        updateLessonTitles();
-        updateRemoveButtons();
-        updateAllCalculations();
-    }
-}
-
-function updateLessonTitles() {
-    document.querySelectorAll('.lesson-card').forEach((card, index) => {
-        const title = card.querySelector('.lesson-title');
-        if (title) title.textContent = `Lesson ${index + 1}`;
-    });
-}
-
-function updateRemoveButtons() {
-    const removeButtons = document.querySelectorAll('.remove-lesson-btn');
-    removeButtons.forEach(btn => {
-        btn.style.display = (lessons.length > 1) ? 'block' : 'none';
-    });
-}
-
-function validateStep1() {
-    let isValid = true;
-    const errorMessages = [];
-
-    const fullName = document.getElementById('fullName').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const suburb = document.getElementById('suburb').value;
-    const address = document.getElementById('address').value.trim();
-    const city = document.getElementById('city').value.trim();
-    const postalCode = document.getElementById('postalCode').value.trim();
-
-    if (!fullName) {
-        errorMessages.push('Full name is required');
-        isValid = false;
-    }
-
-    if (!email) {
-        errorMessages.push('Email is required');
-        isValid = false;
-    } else if (!validateEmail(email)) {
-        errorMessages.push('Please enter a valid email address');
-        isValid = false;
-    }
-
-    if (!suburb) {
-        errorMessages.push('Please select your suburb');
-        isValid = false;
-    }
-
-    if (!address) {
-        errorMessages.push('Address is required');
-        isValid = false;
-    }
-
-    if (!city) {
-        errorMessages.push('City is required');
-        isValid = false;
-    }
-
-    if (!postalCode) {
-        errorMessages.push('Postal code is required');
-        isValid = false;
-    }
-
-    lessons.forEach(lesson => {
-        if (!lesson.type || !lesson.duration || !lesson.ballLevel) {
-            errorMessages.push('Please complete all lesson details');
-            isValid = false;
-        }
-    });
-
-    if (!isValid) {
-        showToast('danger', 'Validation Error', `Please fix the following errors:<br>• ${errorMessages.join('<br>• ')}`);
-    }
-
-    return isValid;
-}
-
-function validateEmail(email) {
-    const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    return re.test(email);
-}
-
-function onPlayerTypeChange(val) {
-    const isFreeTrial = (val === 'FreeTrial');
-
-    // Toggle the Add Lesson button
-    const addBtn = document.getElementById('addLessonBtn');
-    if (addBtn) addBtn.style.display = isFreeTrial ? 'none' : 'inline-flex';
-
-    // Enforce a single lesson for Free Trial
-    if (isFreeTrial && lessons.length > 1) {
-        lessons = [lessons[0]];
-        // Remove extra lesson cards in the DOM
-        const cards = document.querySelectorAll('.lesson-card');
-        cards.forEach((card, idx) => {
-            if (idx > 0) card.remove();
-        });
-        updateLessonTitles();
-        updateAllCalculations();
-        showToast('info', 'Free Trial Mode', 'Free Trial players can only book one lesson.');
-    }
-
-    // Update remove buttons visibility
-    updateRemoveButtons();
+    lessons = lessons.filter(lesson => lesson.id !== lessonId);
+    renderLessons();
+    updateAllCalculations();
 }
 
 function renderLessons() {
@@ -762,20 +601,18 @@ function renderLessons() {
 
     lessons.forEach((lesson, index) => {
         const lessonElement = document.createElement('div');
-        lessonElement.className = 'lesson-card';
-        lessonElement.dataset.lessonId = lesson.id;
+        lessonElement.className = 'lesson-item';
         lessonElement.innerHTML = `
             <div class="lesson-header">
-                <div class="lesson-title">Lesson ${index + 1}</div>
-                ${lessons.length > 1 ? `<button type="button" class="remove-lesson-btn" onclick="removeLesson(${lesson.id})">
-                    <i class="fas fa-times"></i> Remove
+                <h6>Lesson ${index + 1}</h6>
+                ${lessons.length > 1 ? `<button type="button" class="btn-remove-lesson" onclick="removeLesson(${lesson.id})">
+                    <i class="fas fa-trash"></i>
                 </button>` : ''}
             </div>
-            <div class="lesson-grid">
+            <div class="lesson-content">
                 <div class="form-group">
-                    <label class="form-label">Lesson Type</label>
+                    <label>Lesson Type</label>
                     <select class="form-control lesson-type" onchange="updateLesson(${lesson.id}, 'type', this.value)">
-                        <option value="">Select Type</option>
                         <option value="Private" ${lesson.type === 'Private' ? 'selected' : ''}>Private</option>
                         <option value="Semi-Private" ${lesson.type === 'Semi-Private' ? 'selected' : ''}>Semi-Private</option>
                         <option value="Group" ${lesson.type === 'Group' ? 'selected' : ''}>Group</option>
@@ -783,39 +620,33 @@ function renderLessons() {
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Duration (minutes)</label>
+                    <label>Duration</label>
                     <select class="form-control lesson-duration" onchange="updateLesson(${lesson.id}, 'duration', parseInt(this.value))">
-                        ${generateDurationOptions(lesson.duration)}
+                        <option value="30" ${lesson.duration === 30 ? 'selected' : ''}>30 minutes</option>
+                        <option value="45" ${lesson.duration === 45 ? 'selected' : ''}>45 minutes</option>
+                        <option value="60" ${lesson.duration === 60 ? 'selected' : ''}>1 hour</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Number of Players</label>
-                    <select class="form-control lesson-players" onchange="updateLesson(${lesson.id}, 'players', parseInt(this.value))">
-                        ${generatePlayerOptions(lesson.type, lesson.players)}
-                    </select>
+                    <label>Number of Players</label>
+                    <input type="number" class="form-control lesson-players"
+                           value="${lesson.players}" min="${playerLimits[lesson.type].min}"
+                           max="${playerLimits[lesson.type].max}"
+                           onchange="updateLesson(${lesson.id}, 'players', parseInt(this.value))">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Age - Ball Level</label>
-                    <select class="form-control lesson-ball" onchange="updateLesson(${lesson.id}, 'ballLevel', this.value)">
-                        <option value="">Select Age - Ball Level</option>
-                        <option value="Red" ${lesson.ballLevel === 'Red' ? 'selected' : ''}>3-8 Years Old - Red Ball</option>
-                        <option value="Orange" ${lesson.ballLevel === 'Orange' ? 'selected' : ''}>9-10 Years Old - Orange Ball</option>
-                        <option value="Green" ${lesson.ballLevel === 'Green' ? 'selected' : ''}>11-12 Years Old - Green Ball</option>
-                        <option value="Yellow" ${lesson.ballLevel === 'Yellow' ? 'selected' : ''}>13+ Years Old - Yellow Ball</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Lesson Description (Optional)</label>
+                    <label>Description</label>
                     <textarea class="form-control lesson-description"
-                              onchange="updateLesson(${lesson.id}, 'description', this.value)"
-                              placeholder="Any special requirements for lesson"
-                              rows="1">${lesson.description || ''}</textarea>
+                              placeholder="Enter lesson description..."
+                              onchange="updateLesson(${lesson.id}, 'description', this.value)">${lesson.description || ''}</textarea>
+                </div>
+                <div class="lesson-price">
+                    <strong>Price: $${calculateLessonPrice(lesson)}</strong>
                 </div>
             </div>
         `;
         lessonsContainer.appendChild(lessonElement);
     });
-    updateRemoveButtons();
 }
 
 function updateLesson(lessonId, field, value) {
@@ -824,9 +655,8 @@ function updateLesson(lessonId, field, value) {
         lesson[field] = value;
 
         if (field === 'type') {
-            // Update player options based on lesson type
             const limits = playerLimits[value];
-            lesson.players = Math.max(limits.min, Math.min(lesson.players, limits.max));
+            lesson.players = Math.max(limits.min, Math.min(limits.max, lesson.players));
         }
 
         renderLessons();
@@ -834,60 +664,9 @@ function updateLesson(lessonId, field, value) {
     }
 }
 
-function generateDurationOptions(selectedDuration) {
-    let options = '';
-    for (let i = adminSettings.timeInterval; i <= 120; i += adminSettings.timeInterval) {
-        const selected = i === selectedDuration ? 'selected' : '';
-        options += `<option value="${i}" ${selected}>${i} minutes</option>`;
-    }
-    return options;
-}
-
-function generatePlayerOptions(lessonType, selectedPlayers) {
-    let options = '';
-    let min = 1, max = 8;
-
-    if (lessonType && playerLimits[lessonType]) {
-        min = playerLimits[lessonType].min;
-        max = playerLimits[lessonType].max;
-    }
-
-    for (let i = min; i <= max; i++) {
-        const selected = i === selectedPlayers ? 'selected' : '';
-        options += `<option value="${i}" ${selected}>${i} player${i !== 1 ? 's' : ''}</option>`;
-    }
-
-    return options;
-}
-
 function calculateLessonPrice(lesson) {
-    if (lesson.type && rateStructure[lesson.type]) {
-        const rates = rateStructure[lesson.type];
-        let price = 0;
-
-        if (lesson.type === "Private") {
-            if (lesson.duration === 30) {
-                price = rates["30min"];
-            } else if (lesson.duration === 45) {
-                price = rates["45min"];
-            } else {
-                price = rates.hourly * (lesson.duration / 60);
-            }
-        } else {
-            let pricePerPlayer;
-            if (lesson.duration === 30) {
-                pricePerPlayer = rates["30min"];
-            } else if (lesson.duration === 45) {
-                pricePerPlayer = rates["45min"];
-            } else {
-                pricePerPlayer = rates.hourly * (lesson.duration / 60);
-            }
-            price = pricePerPlayer * lesson.players;
-        }
-
-        return price;
-    }
-    return 0;
+    const basePrice = rateStructure[lesson.type][lesson.duration === 60 ? 'hourly' : lesson.duration + 'min'];
+    return basePrice * lesson.players;
 }
 
 function updateAllCalculations() {
@@ -910,24 +689,19 @@ function updateAllCalculations() {
 function nextStep() {
     if (currentStep === 1) {
         if (lessons.length === 0) {
-            showToast('warning', 'No Lessons', 'Please add at least one lesson.');
-            return;
-        }
-
-        // Validate step 1
-        if (!validateStep1()) {
+            alert('Please add at least one lesson.');
             return;
         }
 
         if (!selectedTime) {
-            showToast('warning', 'No Time Selected', 'Please select a time slot.');
+            alert('Please select a time slot.');
             return;
         }
 
         document.getElementById('step1').style.display = 'none';
         document.getElementById('step2').style.display = 'block';
         document.getElementById('nextBtn').style.display = 'none';
-        document.getElementById('submitBooking').style.display = 'inline-flex';
+        document.getElementById('submitBooking').style.display = 'inline-block';
         document.getElementById('prevBtn').style.display = 'inline-block';
         currentStep = 2;
 
@@ -987,104 +761,15 @@ function generateSummary() {
     summaryContainer.innerHTML = summaryHTML;
 }
 
-function generateDetailedBookingSummary() {
-    const totalPrice = lessons.reduce((sum, lesson) => sum + calculateLessonPrice(lesson), 0);
-    const totalDuration = lessons.reduce((sum, lesson) => sum + lesson.duration, 0);
-
-    const dateStr = selectedDate.toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-
-    let summary = "TENNIS LESSON BOOKING DETAILS\n";
-    summary += "====================================\n\n";
-
-    // Personal Details
-    summary += "PERSONAL DETAILS\n";
-    summary += "-----------------\n";
-    summary += `Full Name: ${document.getElementById('fullName').value.trim()}\n`;
-    summary += `Email: ${document.getElementById('email').value.trim()}\n`;
-    summary += `Player Type: ${document.getElementById('playerType')?.value || 'Returning'}\n`;
-    summary += `Address: ${document.getElementById('address').value.trim()}\n`;
-    summary += `Suburb: ${document.getElementById('suburb').value}\n`;
-    summary += `City: ${document.getElementById('city').value.trim()}\n`;
-    summary += `Postal Code: ${document.getElementById('postalCode').value.trim()}\n`;
-    summary += `State: ${document.getElementById('state').value}\n`;
-    summary += `Country: ${document.getElementById('country').value}\n\n`;
-
-    // Booking Details
-    summary += "BOOKING DETAILS\n";
-    summary += "----------------\n";
-    summary += `Date: ${dateStr}\n`;
-    summary += `Time: ${formatTimeDisplay(selectedTime)}\n`;
-    summary += `Duration: ${totalDuration} minutes\n`;
-    summary += `Total Price: $${totalPrice.toFixed(2)}\n\n`;
-
-    // Lessons Details
-    summary += "LESSONS DETAILS\n";
-    summary += "----------------\n";
-    lessons.forEach((lesson, index) => {
-        summary += `Lesson ${index + 1}:\n`;
-        summary += `  Type: ${lesson.type || 'Not selected'}\n`;
-        summary += `  Duration: ${lesson.duration || 0} minutes\n`;
-        summary += `  Players: ${lesson.players || 0}\n`;
-        summary += `  Ball Level: ${lesson.ballLevel || 'Not selected'}\n`;
-        if (lesson.description) {
-            summary += `  Description: ${lesson.description}\n`;
-        }
-        summary += "\n";
-    });
-
-    summary += `Booking Created: ${new Date().toLocaleString()}\n`;
-
-    return summary;
-}
-
 function submitBooking() {
-    // Calculate total minutes from lessons
-    const totalMinutes = lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0);
-
-    // Calculate total price
-    const totalPrice = lessons.reduce((sum, lesson) => sum + calculateLessonPrice(lesson), 0);
-
-    // Format time slot string
-    const timeSlotStr = selectedDate && selectedTime ?
-        `${formatTimeDisplay(selectedTime)} - ${formatTimeDisplay(minutesToTime(timeToMinutes(selectedTime) + totalMinutes))}, ${selectedDate.toLocaleDateString('en-US', {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric'
-        })}` : '';
-
-    // Generate detailed booking summary
-    const bookingSummary = generateDetailedBookingSummary();
-
-    // Gather all booking details
-    const bookingData = {
-        playerType: document.getElementById('playerType')?.value || 'Returning',
-        fullName: document.getElementById('fullName').value.trim(),
-        email: document.getElementById('email').value.trim(),
-        suburb: document.getElementById('suburb').value,
-        address: document.getElementById('address').value.trim(),
-        city: document.getElementById('city').value.trim(),
-        postalCode: document.getElementById('postalCode').value.trim(),
-        state: document.getElementById('state').value,
-        country: document.getElementById('country').value,
-        selectedDate: selectedDate ? formatDate(selectedDate) : null,
-        selectedTimeSlot: timeSlotStr,
-        totalMinutes: totalMinutes,
-        bookingTotalPrice: totalPrice.toFixed(2),
-        totalAmount: totalPrice.toFixed(2),
-        bookingSummary: bookingSummary,
-        lessons: lessons.map(lesson => ({
-            type: lesson.type,
-            duration: lesson.duration,
-            players: lesson.players,
-            ballLevel: lesson.ballLevel,
-            description: lesson.description
-        }))
+    const formData = {
+        selectedDate: formatDate(selectedDate),
+        selectedTimeSlot: selectedTime,
+        lessons: lessons,
+        selectedCoachId: window.selectedCoachId || null,
+        selectedCoachName: window.selectedCoachName || null,
+        selectedBufferMinutes: window.selectedBufferMinutes || 0,
+        playerType: 'Regular'
     };
 
     const submitBtn = document.getElementById('submitBooking');
@@ -1092,66 +777,31 @@ function submitBooking() {
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
     submitBtn.disabled = true;
 
-    fetch('/api/book-appointment', {
+    fetch('/book-appointment', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
         },
-        body: JSON.stringify(bookingData)
+        body: JSON.stringify(formData)
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        // Check if response is JSON or plain text
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-            return response.json();
-        } else {
-            return response.text();
-        }
-    })
+    .then(response => response.json())
     .then(data => {
-        console.log('Response data:', data); // Debug log
-
-        // Check if we have a URL (success case)
-        if (data.url || (typeof data === 'string' && data.includes('stripe.com'))) {
-            const stripeUrl = data.url || data;
-            showToast('success', 'Booking Successful!', 'Redirecting to payment...');
-            setTimeout(() => {
-                window.location.href = stripeUrl;
-            }, 1500);
-        }
-        // Check if it's a free trial
-        else if (data.is_free_trial) {
-            showToast('success', 'Booking Successful!', 'Redirecting to success page...');
-            setTimeout(() => {
+        if (data.success) {
+            if (data.is_free_trial) {
                 window.location.href = 'https://homecourtadvantage-net.beast-hosting.com/success';
-            }, 1500);
-        }
-        // Check if we have success flag
-        else if (data.success) {
-            showToast('success', 'Booking Successful!', 'Redirecting to payment...');
-            setTimeout(() => {
-                if (data.is_free_trial) {
-                    window.location.href = 'https://homecourtadvantage-net.beast-hosting.com/success';
-                } else {
-                    window.location.href = data.url;
-                }
-            }, 1500);
-        }
-        // Error case
-        else {
-            showToast('danger', 'Booking Failed', data.message || 'Something went wrong. Please try again.');
+            } else {
+                window.location.href = data.url;
+            }
+        } else {
+            alert('Error: ' + (data.message || 'Something went wrong'));
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showToast('danger', 'Network Error', 'Unable to connect to server. Please check your connection and try again.');
+        alert('Error: Something went wrong');
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
     });
@@ -1197,51 +847,4 @@ function nextMonth() {
 function goToToday() {
     currentDate = new Date();
     renderCalendar();
-}
-
-function showToast(type = 'success', title = 'Success', message = 'Everything worked!') {
-    const toastEl = document.getElementById('liveToast');
-    if (!toastEl) {
-        // Fallback to alert if toast element doesn't exist
-        alert(`${title}: ${message}`);
-        return;
-    }
-
-    const toast = new bootstrap.Toast(toastEl);
-
-    // Remove old classes
-    toastEl.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'bg-info');
-
-    // Add new class based on type
-    switch(type) {
-        case 'success':
-            toastEl.classList.add('bg-success');
-            break;
-        case 'danger':
-            toastEl.classList.add('bg-danger');
-            break;
-        case 'warning':
-            toastEl.classList.add('bg-warning');
-            break;
-        case 'info':
-            toastEl.classList.add('bg-info');
-            break;
-        default:
-            toastEl.classList.add('bg-success');
-    }
-
-    // Set title and message
-    const titleEl = toastEl.querySelector('.toast-title');
-    const messageEl = toastEl.querySelector('.toast-message');
-
-    if (titleEl) titleEl.textContent = title;
-    if (messageEl) messageEl.innerHTML = message;
-
-    // Icon color based on type
-    const icon = toastEl.querySelector('.toast-icon');
-    if (icon) {
-        icon.className = 'fas fa-circle me-2 toast-icon text-white';
-    }
-
-    toast.show();
 }

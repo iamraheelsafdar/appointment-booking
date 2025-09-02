@@ -71,6 +71,7 @@ Route::group(['middleware' => ['logs']], function () {
                 Route::post('/delete-availability', [AvailabilityController::class, 'deleteAvailability'])->name('availability.destroy');
 
                 Route::get('transaction', [TransactionController::class, 'transactionView'])->name('transactionView');
+                Route::post('transaction/update-status', [TransactionController::class, 'updateTransactionStatus'])->name('updateTransactionStatus');
 
             });
             Route::prefix('google')->group(function () {

@@ -32,4 +32,44 @@ class TransactionService implements TransactionInterface
         $transactions = $transactionCollection->toArray($request);
         return view('backend.transaction.transaction', ['transactions' => $transactions]);
     }
+
+    /**
+     * Update transaction status manually
+     * @param $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public static function updateTransactionStatus($request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $transaction = Transaction::find($request->transaction_id);
+            
+            if (!$transaction) {
+                return response()->json(['success' => false, 'message' => 'Transaction not found.'], 404);
+            }
+
+            // Only admin can update transaction status
+            if (auth()->user()->user_type !== 'Admin') {
+                return response()->json(['success' => false, 'message' => 'Unauthorized access.'], 403);
+            }
+
+            $transaction->update([
+                'status' => $request->status,
+                'notes' => $request->notes ?? null,
+                'updated_by' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => true, 
+                'message' => 'Transaction status updated successfully.',
+                'transaction' => $transaction
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Something went wrong.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

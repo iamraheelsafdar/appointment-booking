@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Tennis Lesson Booking - Enhanced</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -25,7 +26,7 @@
 <div class="main-container">
     <!-- Calendar Header -->
     <div class="calendar-header">
-        <h1 class="calendar-title" id="currentMonth">March 2024</h1>
+        <h1 class="calendar-title" id="monthYear">March 2024</h1>
         <div class="calendar-nav">
             <button class="today-btn" onclick="goToToday()">Today</button>
             <button class="nav-btn" onclick="previousMonth()">
@@ -49,7 +50,7 @@
                     <div class="weekday">Sat</div>
                     <div class="weekday">Sun</div>
                 </div>
-                <div class="calendar-dates" id="calendarDates">
+                <div class="calendar-dates" id="calendar">
                     <!-- Calendar dates will be populated by JavaScript -->
                 </div>
             </div>
@@ -67,6 +68,12 @@
         </div>
     </div>
 
+
+    <!-- Admin Calendar Warning -->
+    <div class="alert alert-warning d-none" id="adminCalendarWarning" style="margin: 15px;">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>Notice:</strong> Admin calendar is not connected. Bookings may not sync with Google Calendar.
+    </div>
 
     <!-- No Selection Message -->
     <div class="no-selection" id="noSelection">
@@ -116,12 +123,7 @@
                             <input type="email" class="form-control" id="email" placeholder="john@example.com">
                         </div>
 
-                        <div class="form-group">
-                            <label class="form-label">Description</label>
-                            <textarea class="form-control" id="description"
-                                      placeholder="Description"
-                                      rows="1"></textarea>
-                        </div>
+
 
                         <div class="form-group">
                             <label class="form-label">Player Type</label>
@@ -178,22 +180,20 @@
                         </div>
 
 
-                        <div class="form-group">
-                        @foreach($coachNames as $coachName)
-                            <label class="form-label">Select Coach</label>
-                            <select class="form-control" id="coachs">
-                                <option value="">Any Coach</option>
-                                <option value="{{$coachName}}">{{$coachName}}</option>
-                            </select>
-                        @endforeach
-                        </div>
+                        <!-- Coach selection removed - will be handled via calendar -->
 
                     </div>
                 </div>
 
                 <!-- Lessons Section -->
-                <div id="lessonsContainer">
-                    <!-- Lessons will be dynamically added here -->
+                <div class="lessons-section">
+                    <div class="lessons-header">
+                        <i class="fas fa-tennis-ball"></i>
+                        <h3>Lesson Details</h3>
+                    </div>
+                    <div id="lessonsContainer">
+                        <!-- Lessons will be dynamically added here -->
+                    </div>
                 </div>
 
                 <button type="button" id="addLessonBtn" class="add-lesson-btn" onclick="addNewLesson()">
@@ -207,7 +207,7 @@
                     <div class="summary-title">
                         <i class="fas fa-calendar-check"></i> Booking Summary
                     </div>
-                    <div id="summaryContent">
+                    <div id="bookingSummary">
                         <!-- Summary will be populated by JavaScript -->
                     </div>
                     <div class="total-price" id="summaryTotalPrice">
@@ -225,6 +225,9 @@
                 <button type="button" class="btn-primary" id="nextBtn" onclick="nextStep()">
                     Next <i class="fas fa-arrow-right"></i>
                 </button>
+                <button type="button" class="btn-success" id="submitBooking" onclick="submitBooking()" style="display: none;">
+                    <i class="fas fa-check-circle"></i> CONFIRM BOOKING
+                </button>
             </div>
         </div>
 
@@ -240,13 +243,16 @@
 <!-- Scripts -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBLg9F5LgFPTIpvSwRasji1V31Grnc02L0&libraries=places"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBLg9F5LgFPTIpvSwRasji1V31Grnc02L0&libraries=places&loading=async&callback=initGoogleMaps"></script>
 
 <script>
     window.bookedSlots = @json($bookedSlots);
     window.availablity = @json($availablity);
     window.slotDifference = @json((int) $siteSetting->slot_difference ?? 30);
+    window.coaches = @json($coaches);
+    window.coachAvailability = @json($coachAvailability);
+    window.adminGoogleConnected = @json($adminGoogleConnected);
 </script>
-<script src="{{asset('assets/js/front-script.js')}}"></script>
+<script src="{{asset('assets/js/front-script.js')}}?v={{time()}}&r={{rand(1000,9999)}}"></script>
 </body>
 </html>
