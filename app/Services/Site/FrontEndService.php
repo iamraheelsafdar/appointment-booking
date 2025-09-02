@@ -250,11 +250,23 @@ class FrontEndService implements FrontEndInterface
                 $totalLessonTime = collect($request->lessons)->sum('duration');
                 
                 // Calculate actual available time from the selected time slot
+                // Handle time slot format: "1:30 PM - 2:30 PM, Thu, Sep 11, 2025"
                 $timeSlotParts = explode(' - ', $request->selectedTimeSlot);
                 if (count($timeSlotParts) === 2) {
-                    $startTime = Carbon::createFromFormat('g:i A', trim($timeSlotParts[0]));
-                    $endTime = Carbon::createFromFormat('g:i A', trim($timeSlotParts[1]));
-                    $availableTime = $endTime->diffInMinutes($startTime);
+                    // Extract just the time part from the start time
+                    $startTimeStr = trim($timeSlotParts[0]);
+                    
+                    // Extract just the time part from the end time (remove date part)
+                    $endTimeStr = trim(explode(',', $timeSlotParts[1])[0]);
+                    
+                    try {
+                        $startTime = Carbon::createFromFormat('g:i A', $startTimeStr);
+                        $endTime = Carbon::createFromFormat('g:i A', $endTimeStr);
+                        $availableTime = $endTime->diffInMinutes($startTime);
+                    } catch (\Exception $e) {
+                        // Fallback to 60 minutes if time parsing fails
+                        $availableTime = 60;
+                    }
                 } else {
                     // Fallback to 60 minutes if time slot parsing fails
                     $availableTime = 60;
@@ -277,11 +289,23 @@ class FrontEndService implements FrontEndInterface
                     ->get();
 
                 foreach ($conflictingBookings as $existingBooking) {
-                    $existingStartTime = Carbon::createFromFormat('g:i A', explode(' - ', $existingBooking->selected_time_slot)[0]);
-                    $existingEndTime = Carbon::createFromFormat('g:i A', explode(' - ', $existingBooking->selected_time_slot)[1]);
+                    // Handle existing booking time slot format
+                    $existingTimeParts = explode(' - ', $existingBooking->selected_time_slot);
+                    if (count($existingTimeParts) === 2) {
+                        $existingStartTime = Carbon::createFromFormat('g:i A', trim($existingTimeParts[0]));
+                        $existingEndTime = Carbon::createFromFormat('g:i A', trim(explode(',', $existingTimeParts[1])[0]));
+                    } else {
+                        continue; // Skip invalid time slots
+                    }
 
-                    $newStartTime = Carbon::createFromFormat('g:i A', $request->selectedTimeSlot);
-                    $newEndTime = $newStartTime->copy()->addMinutes($totalLessonTime);
+                    // Handle new booking time slot format
+                    $newTimeParts = explode(' - ', $request->selectedTimeSlot);
+                    if (count($newTimeParts) === 2) {
+                        $newStartTime = Carbon::createFromFormat('g:i A', trim($newTimeParts[0]));
+                        $newEndTime = $newStartTime->copy()->addMinutes($totalLessonTime);
+                    } else {
+                        continue; // Skip invalid time slots
+                    }
 
                     // Check if there's any overlap
                     if ($newStartTime < $existingEndTime && $newEndTime > $existingStartTime) {

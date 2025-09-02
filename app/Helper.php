@@ -107,16 +107,16 @@ class Helper
             ]);
             $client->setAccessToken($newToken);
         }
-        
+
         // Check if the token has the required scopes
         $requiredScopes = [
             'https://www.googleapis.com/auth/calendar.events',
             'https://www.googleapis.com/auth/calendar.readonly'
         ];
-        
+
         $tokenScopes = explode(' ', $tokenData->scope ?? '');
         $hasRequiredScopes = array_intersect($requiredScopes, $tokenScopes);
-        
+
         if (empty($hasRequiredScopes)) {
             // Token doesn't have required scopes, need to re-authenticate
             session()->flash('errors', 'Google Calendar permissions need to be updated. Please reconnect your Google Calendar.');
