@@ -185,6 +185,17 @@
                     </div>
                 </div>
 
+                <!-- Time Validation Display -->
+                <div id="timeValidationDisplay" class="time-validation-display" style="display: none;">
+                    <div class="alert alert-info">
+                        <i class="fas fa-clock"></i>
+                        <strong>Time Validation:</strong>
+                        <span id="timeValidationText">Available: 0 minutes | Used: 0 minutes | Remaining: 0 minutes</span>
+                        <button type="button" class="btn btn-sm btn-outline-info ms-2" onclick="testTimeCalculation()">Test Calculation</button>
+                        <button type="button" class="btn btn-sm btn-outline-warning ms-2" onclick="refreshTimeValidation()">Refresh</button>
+                    </div>
+                </div>
+
                 <!-- Lessons Section -->
                 <div class="lessons-section">
                     <div class="lessons-header">
@@ -253,6 +264,6 @@
     window.coachAvailability = @json($coachAvailability);
     window.adminGoogleConnected = @json($adminGoogleConnected);
 </script>
-<script src="{{asset('assets/js/front-script.js')}}?v={{time()}}&r={{rand(1000,9999)}}"></script>
+<script src="{{asset('assets/js/front-script.js')}}?v={{time()}}&r={{rand(1000,9999)}}&debug={{time()}}"></script>
 </body>
 </html>

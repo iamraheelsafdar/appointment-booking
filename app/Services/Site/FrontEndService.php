@@ -246,14 +246,28 @@ class FrontEndService implements FrontEndInterface
                     return response()->json(['errors' => ['Selected coach is not available.']], 422);
                 }
 
-                // Validate time against buffer minutes and check for conflicts
+                // Validate total lesson time against available slot time
+                $totalLessonTime = collect($request->lessons)->sum('duration');
+                
+                // Calculate actual available time from the selected time slot
+                $timeSlotParts = explode(' - ', $request->selectedTimeSlot);
+                if (count($timeSlotParts) === 2) {
+                    $startTime = Carbon::createFromFormat('g:i A', trim($timeSlotParts[0]));
+                    $endTime = Carbon::createFromFormat('g:i A', trim($timeSlotParts[1]));
+                    $availableTime = $endTime->diffInMinutes($startTime);
+                } else {
+                    // Fallback to 60 minutes if time slot parsing fails
+                    $availableTime = 60;
+                }
+                
+                // Apply buffer minutes if specified
                 if (!empty($request->selectedBufferMinutes)) {
-                    $totalLessonTime = collect($request->lessons)->sum('duration');
-                    $availableTime = 60 - $request->selectedBufferMinutes; // Assuming 1-hour slots
+                    $availableTime = $availableTime - $request->selectedBufferMinutes;
+                }
 
-                    if ($totalLessonTime > $availableTime) {
-                        return response()->json(['errors' => ['Total lesson time exceeds available slot time considering buffer minutes.']], 422);
-                    }
+                if ($totalLessonTime > $availableTime) {
+                    $bufferInfo = !empty($request->selectedBufferMinutes) ? ' considering buffer minutes (' . $request->selectedBufferMinutes . ' minutes)' : '';
+                    return response()->json(['errors' => ['Total lesson time (' . $totalLessonTime . ' minutes) exceeds available slot time (' . $availableTime . ' minutes)' . $bufferInfo . '. Please reduce lesson duration or select a longer time slot.']], 422);
                 }
 
                 // Check for time slot conflicts with existing bookings

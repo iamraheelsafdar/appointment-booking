@@ -10,24 +10,19 @@ const adminSettings = {
 // Tennis lesson pricing
 const rateStructure = {
     "Private": {
-        hourly: 90,
-        "45min": 70,
-        "30min": 50
+        base: 65,
+        perDuration: 20 // Add $20 for each duration increment
     },
     "Semi-Private": {
-        hourly: 50,
-        "45min": 40,
-        "30min": 30
+        base: 80,
+        perDuration: 20 // Add $20 for each duration increment
     },
     "Group": {
-        hourly: 35,
-        "45min": 30,
-        "30min": 25
+        base: 45, // Base for 3 players
+        perPlayer: 10 // Add $10 for each additional player above 3
     },
     "Cardio Tennis": {
-        hourly: 25,
-        "45min": 20,
-        "30min": 15
+        perPlayer: 20 // $20 per person
     }
 };
 
@@ -50,11 +45,19 @@ const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== DOM LOADED ===');
+    console.log('adminSettings:', adminSettings);
+    console.log('coaches:', coaches);
+    console.log('coachAvailability:', coachAvailability);
+    console.log('adminGoogleConnected:', adminGoogleConnected);
+
     initCalendar();
 
     // Initialize player type controls
     const initialType = document.getElementById('playerType')?.value || 'Returning';
     onPlayerTypeChange(initialType);
+
+    console.log('=== INITIALIZATION COMPLETE ===');
 });
 
 // Google Maps API callback function
@@ -309,6 +312,9 @@ function selectDate(date, dateElement) {
 }
 
 function showTimeSlots(date) {
+    console.log('=== SHOW TIME SLOTS FUNCTION CALLED ===');
+    console.log('Date parameter:', date);
+
     const timePanel = document.getElementById('timePanel');
     const selectedDateChip = document.getElementById('selectedDateChip');
     const timeSlots = document.getElementById('timeSlots');
@@ -317,6 +323,9 @@ function showTimeSlots(date) {
         console.error('Time panel elements not found');
         return;
     }
+
+    // Force alert to confirm function is called
+    alert(`showTimeSlots called for date: ${date.toDateString()}`);
 
     const dateStr = date.toLocaleDateString('en-US', {
         weekday: 'long',
@@ -341,11 +350,11 @@ function showTimeSlots(date) {
     if (availableCoaches.length === 0) {
         // Fallback to merged availability
         const daySchedule = adminSettings.dailySchedule[dayOfWeek];
-        if (!daySchedule || !daySchedule.chunks) {
-            timeSlots.innerHTML = '<div class="text-center p-4">No available times for this day</div>';
+    if (!daySchedule || !daySchedule.chunks) {
+        timeSlots.innerHTML = '<div class="text-center p-4">No available times for this day</div>';
             timePanel.style.display = 'block';
-            return;
-        }
+        return;
+    }
 
         selectedDateChip.textContent = dateStr + ' - Merged Schedule';
         timeSlots.innerHTML = `
@@ -358,8 +367,8 @@ function showTimeSlots(date) {
                     <h6>Available Times (Merged):</h6>
                     <div class="merged-slots" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
                         ${daySchedule.chunks.map(chunk => {
-                            const startMinutes = timeToMinutes(chunk.startTime);
-                            const endMinutes = timeToMinutes(chunk.endTime);
+        const startMinutes = timeToMinutes(chunk.startTime);
+        const endMinutes = timeToMinutes(chunk.endTime);
                             const bufferMinutes = chunk.bufferMinutes || 0;
                             const availableMinutes = endMinutes - startMinutes - bufferMinutes;
                             let slots = '';
@@ -405,8 +414,8 @@ function showTimeSlots(date) {
 
 
 
-            for (let minutes = startMinutes; minutes < endMinutes; minutes += adminSettings.timeInterval) {
-                const timeStr = minutesToTime(minutes);
+        for (let minutes = startMinutes; minutes < endMinutes; minutes += adminSettings.timeInterval) {
+            const timeStr = minutesToTime(minutes);
                 const isBooked = checkIfTimeSlotBookedForCoach(timeStr, dateKey, coach.id);
                 const slotEndMinutes = minutes + adminSettings.timeInterval;
                 const availableEndMinutes = startMinutes + availableMinutes;
@@ -416,7 +425,14 @@ function showTimeSlots(date) {
                 const hasEnoughTime = remainingTime > adminSettings.timeInterval;
 
                 if (hasEnoughTime) {
-                    const slot = createTimeSlot(timeStr, isBooked, coach.name, bufferMinutes, coach.id);
+                    console.log('Creating time slot with:', {
+                        timeStr: timeStr,
+                        coachName: coach.name,
+                        bufferMinutes: bufferMinutes,
+                        chunkStartTime: chunk.startTime,
+                        chunkEndTime: chunk.endTime
+                    });
+                    const slot = createTimeSlot(timeStr, isBooked, coach.name, bufferMinutes, coach.id, chunk.startTime, chunk.endTime);
                     allSlotsContainer.appendChild(slot);
                 } else {
                     // Show error for last slot
@@ -561,7 +577,7 @@ function formatTimeForComparison(timeStr) {
     }
 }
 
-function createTimeSlot(time, isBooked, coachName = null, bufferMinutes = 0, coachId = null) {
+function createTimeSlot(time, isBooked, coachName = null, bufferMinutes = 0, coachId = null, startTime = null, endTime = null) {
     const slot = document.createElement('div');
     slot.className = 'time-slot';
 
@@ -569,13 +585,15 @@ function createTimeSlot(time, isBooked, coachName = null, bufferMinutes = 0, coa
 
     if (coachName) {
         slot.innerHTML = `
-            <div style="font-weight: 600; font-size: 14px; margin-bottom: 2px;">${timeText}</div>
+            <div class="time-slot-time" style="font-weight: 600; font-size: 14px; margin-bottom: 2px;">${timeText}</div>
             <div style="font-size: 10px; color: #666;">${coachName}</div>
         `;
 
         slot.dataset.coachName = coachName;
         slot.dataset.coachId = coachId;
         slot.dataset.bufferMinutes = bufferMinutes;
+        slot.dataset.startTime = startTime;
+        slot.dataset.endTime = endTime;
     } else {
         slot.textContent = timeText;
     }
@@ -584,7 +602,7 @@ function createTimeSlot(time, isBooked, coachName = null, bufferMinutes = 0, coa
         slot.classList.add('booked');
     } else {
         slot.classList.add('available');
-        slot.addEventListener('click', () => selectTime(time, slot, coachName, bufferMinutes, coachId));
+        slot.addEventListener('click', () => selectTime(time, slot, coachName, bufferMinutes, coachId, startTime, endTime));
     }
 
     return slot;
@@ -597,7 +615,8 @@ function formatTimeDisplay(time) {
     return `${displayHours}:${String(minutes).padStart(2, '0')} ${period}`;
 }
 
-function selectTime(time, element, coachName = null, bufferMinutes = 0, coachId = null) {
+// Enhanced selectTime function with immediate validation
+function selectTime(time, element, coachName = null, bufferMinutes = 0, coachId = null, startTime = null, endTime = null) {
     // Remove previous selection
     document.querySelectorAll('.time-slot.selected').forEach(el => {
         el.classList.remove('selected');
@@ -607,37 +626,184 @@ function selectTime(time, element, coachName = null, bufferMinutes = 0, coachId 
     element.classList.add('selected');
     selectedTime = time;
 
-    // Store selected coach
+    // Store selected coach and slot information
     if (coachName) {
         window.selectedCoachName = coachName;
         window.selectedCoachId = coachId;
         window.selectedBufferMinutes = bufferMinutes;
+        window.selectedStartTime = startTime;
+        window.selectedEndTime = endTime;
+
+        // Create the full time slot string for validation
+        if (startTime && endTime) {
+            const startTimeFormatted = formatTimeDisplay(startTime);
+            const endTimeFormatted = formatTimeDisplay(endTime);
+            window.selectedTimeSlot = `${startTimeFormatted} - ${endTimeFormatted}`;
+        } else {
+            window.selectedTimeSlot = formatTimeDisplay(time);
+        }
     }
 
     // Show stepper form
     document.getElementById('stepperForm').style.display = 'block';
     document.getElementById('noSelection').style.display = 'none';
 
-    // Initialize with first lesson
+    // Initialize with first lesson if none exist
     if (lessons.length === 0) {
-        addNewLesson();
+        const lesson = {
+            id: lessonIdCounter++,
+            type: 'Private',
+            duration: adminSettings.timeInterval,
+            players: 1,
+            ballLevel: '',
+            description: ''
+        };
+        lessons.push(lesson);
+        renderLessons();
     }
 
+    // Force update of all calculations to refresh time validation
     updateAllCalculations();
+
+    // Immediate validation feedback
+    const validation = validateLessonDuration();
+    if (validation.valid) {
+        showToast('success', 'Time Slot Selected', `Selected time slot with ${validation.availableTime} minutes available.`);
+    }
 }
 
+// Updated addNewLesson function with time validation
 function addNewLesson() {
-    const lesson = {
-        id: lessonIdCounter++,
+    // Create a temporary lesson to test validation
+    const tempLesson = {
+        id: lessonIdCounter,
         type: 'Private',
         duration: adminSettings.timeInterval,
         players: 1,
         ballLevel: '',
         description: ''
     };
-    lessons.push(lesson);
+
+    // Add temporarily to lessons array for validation
+    lessons.push(tempLesson);
+
+    // Validate the new total time
+    const validation = validateLessonDuration();
+
+    if (!validation.valid) {
+        // Remove the temporary lesson
+        lessons.pop();
+
+        showToast('warning', 'Cannot Add Lesson', validation.message);
+        return;
+    }
+
+    // If validation passes, keep the lesson and increment counter
+    tempLesson.id = lessonIdCounter++;
+
     renderLessons();
     updateAllCalculations();
+
+    if (validation.remaining > 0) {
+        showToast('success', 'Lesson Added', `Lesson added successfully. ${validation.remaining} minutes remaining in slot.`);
+    } else {
+        showToast('info', 'Lesson Added', 'Lesson added successfully. Time slot is now fully utilized.');
+    }
+}
+
+function calculateAvailableTimeForSlot() {
+    console.log('=== calculateAvailableTimeForSlot FUNCTION CALLED ===');
+
+    if (!selectedTime || !selectedDate) {
+        console.log('No time or date selected');
+        return 60; // Default fallback
+    }
+
+    // Get the time slots container to analyze available slots
+    const timeSlotsContainer = document.getElementById('timeSlots');
+    if (!timeSlotsContainer) {
+        console.log('Time slots container not found');
+        return 60;
+    }
+
+    // Find all available time slots (not booked, not error slots)
+    const allTimeSlots = timeSlotsContainer.querySelectorAll('.time-slot');
+    const availableSlots = [];
+
+    allTimeSlots.forEach((slot, index) => {
+        const timeText = slot.querySelector('.time-slot-time')?.textContent || slot.textContent || '';
+        const isAvailable = !slot.classList.contains('error-slot') && !slot.classList.contains('booked');
+        const isSelected = slot.classList.contains('selected');
+
+        if (isAvailable || isSelected) {
+            // Parse the time from the slot
+            const timeMatch = timeText.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+            if (timeMatch) {
+                let hours = parseInt(timeMatch[1]);
+                const minutes = parseInt(timeMatch[2]);
+                const period = timeMatch[3].toUpperCase();
+
+                // Convert to 24-hour format
+                if (period === 'PM' && hours !== 12) hours += 12;
+                if (period === 'AM' && hours === 12) hours = 0;
+
+                const timeIn24Hour = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
+
+                availableSlots.push({
+                    index: index,
+                    displayTime: timeText.trim(),
+                    time24: timeIn24Hour,
+                    isSelected: isSelected,
+                    element: slot
+                });
+            }
+        }
+    });
+
+    console.log('All available slots:', availableSlots.map(s => `${s.displayTime} (${s.time24})`));
+
+    // Find the selected slot
+    const selectedSlot = availableSlots.find(slot => slot.isSelected);
+    if (!selectedSlot) {
+        console.log('Selected slot not found in available slots');
+        return 60;
+    }
+
+    console.log('Selected slot:', selectedSlot);
+
+    // Count consecutive slots starting from the selected slot
+    const selectedIndex = selectedSlot.index;
+    let consecutiveSlots = 0;
+    const slotInterval = adminSettings.timeInterval || 30;
+
+    // Count how many consecutive available slots we have from the selected slot
+    for (let i = 0; i < availableSlots.length; i++) {
+        const currentSlot = availableSlots[i];
+
+        // Only count slots that come at or after the selected slot index
+        if (currentSlot.index >= selectedIndex) {
+            consecutiveSlots++;
+            console.log(`Counting slot: ${currentSlot.displayTime} (index: ${currentSlot.index})`);
+        }
+    }
+
+    // Calculate available time
+    const totalAvailableTime = consecutiveSlots * slotInterval;
+    const bufferMinutes = window.selectedBufferMinutes || 0;
+    const finalAvailableTime = Math.max(0, totalAvailableTime - bufferMinutes);
+
+    console.log('Time calculation details:', {
+        selectedSlotIndex: selectedIndex,
+        consecutiveSlots: consecutiveSlots,
+        slotInterval: slotInterval,
+        totalAvailableTime: totalAvailableTime,
+        bufferMinutes: bufferMinutes,
+        finalAvailableTime: finalAvailableTime
+    });
+
+    console.log(`=== RESULT: ${finalAvailableTime} minutes available from selected slot ===`);
+
+    return finalAvailableTime;
 }
 
 function removeLesson(lessonId) {
@@ -667,10 +833,12 @@ function updateRemoveButtons() {
     });
 }
 
+// Enhanced validation for step 1
 function validateStep1() {
     let isValid = true;
     const errorMessages = [];
 
+    // Existing validation...
     const fullName = document.getElementById('fullName').value.trim();
     const email = document.getElementById('email').value.trim();
     const suburb = document.getElementById('suburb').value;
@@ -711,12 +879,20 @@ function validateStep1() {
         isValid = false;
     }
 
-    lessons.forEach(lesson => {
+    // Validate lesson details
+    lessons.forEach((lesson, index) => {
         if (!lesson.type || !lesson.duration || !lesson.ballLevel) {
-            errorMessages.push('Please complete all lesson details');
+            errorMessages.push(`Please complete all details for Lesson ${index + 1}`);
             isValid = false;
         }
     });
+
+    // Time validation
+    const timeValidation = validateLessonDuration();
+    if (!timeValidation.valid) {
+        errorMessages.push(timeValidation.message);
+        isValid = false;
+    }
 
     if (!isValid) {
         showToast('danger', 'Validation Error', `Please fix the following errors:<br>• ${errorMessages.join('<br>• ')}`);
@@ -724,6 +900,63 @@ function validateStep1() {
 
     return isValid;
 }
+
+// Add CSS for enhanced time validation display
+const additionalCSS = `
+<style>
+.time-validation-display {
+    margin: 15px 0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.time-validation-display.alert-success .alert {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.time-validation-display.alert-warning .alert {
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+    color: #856404;
+}
+
+.time-validation-display.alert-danger .alert {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+.time-breakdown {
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.coach-info {
+    margin-top: 8px;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.lesson-summary .lesson-price {
+    color: #28a745;
+    font-weight: 600;
+    float: right;
+}
+
+.pricing-breakdown {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+    font-size: 12px;
+}
+</style>
+`;
+
+// Add the CSS to the document head
+document.head.insertAdjacentHTML('beforeend', additionalCSS);
 
 function validateEmail(email) {
     const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -746,7 +979,7 @@ function onPlayerTypeChange(val) {
             if (idx > 0) card.remove();
         });
         updateLessonTitles();
-        updateAllCalculations();
+    updateAllCalculations();
         showToast('info', 'Free Trial Mode', 'Free Trial players can only book one lesson.');
     }
 
@@ -765,73 +998,100 @@ function renderLessons() {
         lessonElement.className = 'lesson-card';
         lessonElement.dataset.lessonId = lesson.id;
         lessonElement.innerHTML = `
-            <div class="lesson-header">
+                <div class="lesson-header">
                 <div class="lesson-title">Lesson ${index + 1}</div>
                 ${lessons.length > 1 ? `<button type="button" class="remove-lesson-btn" onclick="removeLesson(${lesson.id})">
-                    <i class="fas fa-times"></i> Remove
+                        <i class="fas fa-times"></i> Remove
                 </button>` : ''}
-            </div>
-            <div class="lesson-grid">
-                <div class="form-group">
-                    <label class="form-label">Lesson Type</label>
+                </div>
+                <div class="lesson-grid">
+                    <div class="form-group">
+                        <label class="form-label">Lesson Type</label>
                     <select class="form-control lesson-type" onchange="updateLesson(${lesson.id}, 'type', this.value)">
-                        <option value="">Select Type</option>
+                            <option value="">Select Type</option>
                         <option value="Private" ${lesson.type === 'Private' ? 'selected' : ''}>Private</option>
                         <option value="Semi-Private" ${lesson.type === 'Semi-Private' ? 'selected' : ''}>Semi-Private</option>
                         <option value="Group" ${lesson.type === 'Group' ? 'selected' : ''}>Group</option>
                         <option value="Cardio Tennis" ${lesson.type === 'Cardio Tennis' ? 'selected' : ''}>Cardio Tennis</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Duration (minutes)</label>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Duration (minutes)</label>
                     <select class="form-control lesson-duration" onchange="updateLesson(${lesson.id}, 'duration', parseInt(this.value))">
-                        ${generateDurationOptions(lesson.duration)}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Number of Players</label>
+                            ${generateDurationOptions(lesson.duration)}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Number of Players</label>
                     <select class="form-control lesson-players" onchange="updateLesson(${lesson.id}, 'players', parseInt(this.value))">
-                        ${generatePlayerOptions(lesson.type, lesson.players)}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Age - Ball Level</label>
+                            ${generatePlayerOptions(lesson.type, lesson.players)}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Age - Ball Level</label>
                     <select class="form-control lesson-ball" onchange="updateLesson(${lesson.id}, 'ballLevel', this.value)">
-                        <option value="">Select Age - Ball Level</option>
+                            <option value="">Select Age - Ball Level</option>
                         <option value="Red" ${lesson.ballLevel === 'Red' ? 'selected' : ''}>3-8 Years Old - Red Ball</option>
                         <option value="Orange" ${lesson.ballLevel === 'Orange' ? 'selected' : ''}>9-10 Years Old - Orange Ball</option>
                         <option value="Green" ${lesson.ballLevel === 'Green' ? 'selected' : ''}>11-12 Years Old - Green Ball</option>
                         <option value="Yellow" ${lesson.ballLevel === 'Yellow' ? 'selected' : ''}>13+ Years Old - Yellow Ball</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Lesson Description (Optional)</label>
-                    <textarea class="form-control lesson-description"
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Lesson Description (Optional)</label>
+                        <textarea class="form-control lesson-description"
                               onchange="updateLesson(${lesson.id}, 'description', this.value)"
                               placeholder="Any special requirements for lesson"
                               rows="1">${lesson.description || ''}</textarea>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
         lessonsContainer.appendChild(lessonElement);
     });
     updateRemoveButtons();
 }
 
+// Updated updateLesson function with time validation
 function updateLesson(lessonId, field, value) {
     const lesson = lessons.find(l => l.id === lessonId);
-    if (lesson) {
-        lesson[field] = value;
+    if (!lesson) return;
 
-        if (field === 'type') {
-            // Update player options based on lesson type
-            const limits = playerLimits[value];
-            lesson.players = Math.max(limits.min, Math.min(lesson.players, limits.max));
+    // Store original value for rollback
+    const originalValue = lesson[field];
+
+    // Temporarily update the lesson
+    lesson[field] = value;
+
+    // If updating duration, validate it doesn't exceed available time
+    if (field === 'duration') {
+        const validation = validateLessonDuration();
+
+        if (!validation.valid) {
+            // Rollback the change
+            lesson[field] = originalValue;
+
+            showToast('warning', 'Duration Too Long', validation.message);
+
+            // Reset the form field to original value
+            const durationSelect = document.querySelector(`[onchange*="updateLesson(${lessonId}, 'duration'"]`);
+            if (durationSelect) {
+                durationSelect.value = originalValue;
+            }
+
+            return;
         }
-
-        renderLessons();
-        updateAllCalculations();
     }
+
+    // Update player options based on lesson type
+    if (field === 'type') {
+        const limits = playerLimits[value];
+        if (limits) {
+            lesson.players = Math.max(limits.min, Math.min(lesson.players || limits.min, limits.max));
+        }
+    }
+
+    renderLessons();
+    updateAllCalculations();
 }
 
 function generateDurationOptions(selectedDuration) {
@@ -861,33 +1121,42 @@ function generatePlayerOptions(lessonType, selectedPlayers) {
 }
 
 function calculateLessonPrice(lesson) {
-    if (lesson.type && rateStructure[lesson.type]) {
-        const rates = rateStructure[lesson.type];
-        let price = 0;
-
-        if (lesson.type === "Private") {
-            if (lesson.duration === 30) {
-                price = rates["30min"];
-            } else if (lesson.duration === 45) {
-                price = rates["45min"];
-            } else {
-                price = rates.hourly * (lesson.duration / 60);
-            }
-        } else {
-            let pricePerPlayer;
-            if (lesson.duration === 30) {
-                pricePerPlayer = rates["30min"];
-            } else if (lesson.duration === 45) {
-                pricePerPlayer = rates["45min"];
-            } else {
-                pricePerPlayer = rates.hourly * (lesson.duration / 60);
-            }
-            price = pricePerPlayer * lesson.players;
-        }
-
-        return price;
+    if (!lesson.type || !rateStructure[lesson.type]) {
+        return 0;
     }
-    return 0;
+
+    const rates = rateStructure[lesson.type];
+    let price = 0;
+
+    switch (lesson.type) {
+        case "Private":
+            // Base price + (duration increments * per duration cost)
+            const privateDurationIncrements = Math.ceil(lesson.duration / adminSettings.timeInterval);
+            price = rates.base + (rates.perDuration * (privateDurationIncrements - 1));
+            break;
+
+        case "Semi-Private":
+            // Base price + (duration increments * per duration cost)
+            const semiPrivateDurationIncrements = Math.ceil(lesson.duration / adminSettings.timeInterval);
+            price = rates.base + (rates.perDuration * (semiPrivateDurationIncrements - 1));
+            break;
+
+        case "Group":
+            // Base price for 3 players + additional cost for extra players
+            const extraPlayers = Math.max(0, lesson.players - 3);
+            price = rates.base + (extraPlayers * rates.perPlayer);
+            break;
+
+        case "Cardio Tennis":
+            // $20 per player
+            price = rates.perPlayer * lesson.players;
+            break;
+
+        default:
+            price = 0;
+    }
+
+    return Math.max(0, price);
 }
 
 function updateAllCalculations() {
@@ -903,8 +1172,126 @@ function updateAllCalculations() {
     if (totalDurationElement) totalDurationElement.textContent = `${totalDuration} minutes`;
     if (summaryTotalPriceElement) summaryTotalPriceElement.textContent = isFreeTrial ? 'Total: FREE TRIAL' : `Total: $${totalPrice}`;
 
+    // Update time validation display
+    updateTimeValidationDisplay(totalDuration);
+
+    // Show detailed pricing breakdown in console for debugging
+    console.log('Pricing Breakdown:', lessons.map(lesson => ({
+        type: lesson.type,
+        duration: lesson.duration,
+        players: lesson.players,
+        price: calculateLessonPrice(lesson)
+    })));
+
     if (currentStep === 2) {
         generateSummary();
+    }
+}
+
+// Enhanced time validation function
+function validateLessonDuration() {
+    if (!selectedTime || !selectedDate) {
+        return { valid: true, message: '', availableTime: 0, totalTime: 0, remaining: 0 };
+    }
+
+    const totalLessonTime = lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0);
+    const availableTime = calculateAvailableTimeForSlot();
+
+    console.log('=== LESSON DURATION VALIDATION ===');
+    console.log('Total lesson time needed:', totalLessonTime, 'minutes');
+    console.log('Available time in slot:', availableTime, 'minutes');
+
+    if (totalLessonTime > availableTime) {
+        const exceeded = totalLessonTime - availableTime;
+        return {
+            valid: false,
+            message: `Total lesson time (${totalLessonTime} minutes) exceeds available slot time (${availableTime} minutes). You need ${exceeded} fewer minutes.`,
+            totalTime: totalLessonTime,
+            availableTime: availableTime,
+            exceeded: exceeded,
+            remaining: 0
+        };
+    }
+
+    const remaining = availableTime - totalLessonTime;
+    return {
+        valid: true,
+        message: `${remaining} minutes remaining in selected time slot`,
+        totalTime: totalLessonTime,
+        availableTime: availableTime,
+        remaining: remaining,
+        exceeded: 0
+    };
+}
+
+function updateTimeValidationDisplay(totalDuration) {
+    console.log('=== updateTimeValidationDisplay CALLED ===');
+    console.log('Parameters:', { totalDuration, selectedTime, selectedDate });
+
+    const timeValidationDisplay = document.getElementById('timeValidationDisplay');
+    const timeValidationText = document.getElementById('timeValidationText');
+
+    if (!timeValidationDisplay || !timeValidationText) {
+        console.error('Time validation elements not found');
+        return;
+    }
+
+    if (selectedTime && selectedDate) {
+        const validation = validateLessonDuration();
+
+        // Show the display
+        timeValidationDisplay.style.display = 'block';
+
+        let displayClass = 'alert-info';
+        let statusText = '';
+        let statusIcon = '';
+
+        if (!validation.valid) {
+            displayClass = 'alert-danger';
+            statusIcon = '⚠️';
+            statusText = `EXCEEDED: Need ${validation.exceeded} fewer minutes`;
+        } else if (validation.remaining <= 0) {
+            displayClass = 'alert-warning';
+            statusIcon = '⚠️';
+            statusText = 'FULLY USED';
+        } else if (validation.remaining <= 15) {
+            displayClass = 'alert-warning';
+            statusIcon = '⚠️';
+            statusText = `${validation.remaining} minutes remaining`;
+        } else {
+            displayClass = 'alert-success';
+            statusIcon = '✅';
+            statusText = `${validation.remaining} minutes remaining`;
+        }
+
+        // Update alert classes
+        timeValidationDisplay.className = `time-validation-display ${displayClass}`;
+        const alertElement = timeValidationDisplay.querySelector('.alert');
+        if (alertElement) {
+            alertElement.className = `alert ${displayClass.replace('alert-', '')}`;
+        }
+
+        // Create detailed breakdown
+        const breakdown = `
+            <div class="time-breakdown">
+                <strong>Time Slot Analysis:</strong><br>
+                Available: ${validation.availableTime} minutes |
+                Used: ${validation.totalTime} minutes |
+                ${statusIcon} ${statusText}
+            </div>
+        `;
+
+        timeValidationText.innerHTML = breakdown;
+
+        // Add coach info if available
+        if (window.selectedCoachName) {
+            const coachInfo = `<div class="coach-info"><i class="fas fa-user"></i> Coach: ${window.selectedCoachName}</div>`;
+            timeValidationText.innerHTML += coachInfo;
+        }
+
+    } else {
+        // Hide the display if no time slot is selected
+        timeValidationDisplay.style.display = 'none';
     }
 }
 
@@ -923,6 +1310,17 @@ function nextStep() {
         if (!selectedTime) {
             showToast('warning', 'No Time Selected', 'Please select a time slot.');
             return;
+        }
+
+        // Validate total lesson time doesn't exceed available slot time
+        if (window.selectedBufferMinutes !== undefined) {
+            const totalLessonTime = lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0);
+            const availableTime = calculateAvailableTimeForSlot();
+
+            if (totalLessonTime > availableTime) {
+                showToast('warning', 'Time Exceeded', `Total lesson time (${totalLessonTime} minutes) exceeds the available slot time (${availableTime} minutes). Please reduce lesson duration or select a longer time slot.`);
+                return;
+            }
         }
 
         document.getElementById('step1').style.display = 'none';
@@ -955,10 +1353,10 @@ function generateSummary() {
     const totalDuration = lessons.reduce((sum, lesson) => sum + lesson.duration, 0);
     const isFreeTrial = document.getElementById('playerType')?.value === 'FreeTrial';
 
-    const dateStr = selectedDate.toLocaleDateString('en-US', {
-        weekday: 'long',
+        const dateStr = selectedDate.toLocaleDateString('en-US', {
+            weekday: 'long',
         year: 'numeric',
-        month: 'long',
+            month: 'long',
         day: 'numeric'
     });
 
@@ -967,17 +1365,57 @@ function generateSummary() {
             <h6><i class="fas fa-calendar"></i> Date & Time</h6>
             <p>${dateStr} at ${formatTimeDisplay(selectedTime)}</p>
             ${window.selectedCoachName ? `<p><strong>Coach:</strong> ${window.selectedCoachName}</p>` : ''}
-        </div>
+                    </div>
 
         <div class="summary-section">
             <h6><i class="fas fa-list"></i> Lessons</h6>
-            ${lessons.map((lesson, index) => `
-                <div class="lesson-summary">
-                    <p><strong>Lesson ${index + 1}:</strong> ${lesson.type} - ${lesson.duration} minutes - ${lesson.players} player${lesson.players !== 1 ? 's' : ''}
-                    ${!isFreeTrial ? `<span class="lesson-price">$${calculateLessonPrice(lesson)}</span>` : ''}</p>
+            ${lessons.map((lesson, index) => {
+        const lessonPrice = calculateLessonPrice(lesson);
+        let pricingDetails = '';
+
+        // Add pricing breakdown for better transparency
+        if (!isFreeTrial) {
+            switch (lesson.type) {
+                case 'Private':
+                    const privateDurationIncrements = Math.ceil(lesson.duration / adminSettings.timeInterval);
+                    pricingDetails = privateDurationIncrements === 1 ?
+                        'Base rate' :
+                        `Base $${rateStructure.Private.base} + $${rateStructure.Private.perDuration} × ${privateDurationIncrements - 1} duration`;
+                    break;
+                case 'Semi-Private':
+                    const semiPrivateDurationIncrements = Math.ceil(lesson.duration / adminSettings.timeInterval);
+                    pricingDetails = semiPrivateDurationIncrements === 1 ?
+                        'Base rate' :
+                        `Base $${rateStructure['Semi-Private'].base} + $${rateStructure['Semi-Private'].perDuration} × ${semiPrivateDurationIncrements - 1} duration`;
+                    break;
+                case 'Group':
+                    const extraPlayers = Math.max(0, lesson.players - 3);
+                    pricingDetails = extraPlayers === 0 ?
+                        'Base for 3 players' :
+                        `Base $${rateStructure.Group.base} + $${rateStructure.Group.perPlayer} × ${extraPlayers} extra players`;
+                    break;
+                case 'Cardio Tennis':
+                    pricingDetails = `$${rateStructure['Cardio Tennis'].perPlayer} × ${lesson.players} players`;
+                    break;
+            }
+        }
+
+        return `
+                    <div class="lesson-summary">
+                        <p><strong>Lesson ${index + 1}:</strong> ${lesson.type} - ${lesson.duration} minutes - ${lesson.players} player${lesson.players !== 1 ? 's' : ''}</p>
+                        ${lesson.ballLevel ? `<p><small>Ball Level: ${lesson.ballLevel}</small></p>` : ''}
+                        ${!isFreeTrial ? `
+                            <div class="pricing-breakdown">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>${pricingDetails}</span>
+                                    <strong>$${lessonPrice}</strong>
+                    </div>
+                    </div>
+                        ` : ''}
+                    </div>
+                `;
+    }).join('')}
                 </div>
-            `).join('')}
-        </div>
 
         <div class="summary-section">
             <h6><i class="fas fa-calculator"></i> Total</h6>
@@ -994,7 +1432,7 @@ function generateDetailedBookingSummary() {
     const totalDuration = lessons.reduce((sum, lesson) => sum + lesson.duration, 0);
     const isFreeTrial = document.getElementById('playerType')?.value === 'FreeTrial';
 
-    const dateStr = selectedDate.toLocaleDateString('en-US', {
+        const dateStr = selectedDate.toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -1048,6 +1486,124 @@ function generateDetailedBookingSummary() {
 
     return summary;
 }
+
+function testTimeCalculation() {
+    console.log('=== TESTING TIME CALCULATION ===');
+    console.log('Current state:', {
+        selectedTime: selectedTime,
+        selectedBufferMinutes: window.selectedBufferMinutes,
+        selectedStartTime: window.selectedStartTime,
+        selectedEndTime: window.selectedEndTime,
+        selectedTimeSlot: window.selectedTimeSlot
+    });
+
+    if (window.selectedStartTime && window.selectedEndTime) {
+        const startMinutes = timeToMinutes(window.selectedStartTime);
+        const endMinutes = timeToMinutes(window.selectedEndTime);
+        const totalSlotTime = endMinutes - startMinutes;
+        const availableTime = totalSlotTime - window.selectedBufferMinutes;
+
+        console.log('Manual calculation:', {
+            startTime: window.selectedStartTime,
+            endTime: window.selectedEndTime,
+            startMinutes: startMinutes,
+            endMinutes: endMinutes,
+            totalSlotTime: totalSlotTime,
+            bufferMinutes: window.selectedBufferMinutes,
+            availableTime: availableTime
+        });
+
+        alert(`Test Results:\nStart: ${window.selectedStartTime}\nEnd: ${window.selectedEndTime}\nTotal: ${totalSlotTime}min\nBuffer: ${window.selectedBufferMinutes}min\nAvailable: ${availableTime}min`);
+    } else {
+        console.log('No start/end times available');
+        alert('No start/end times available. Please select a time slot first.');
+    }
+}
+
+function refreshTimeValidation() {
+    console.log('=== REFRESHING TIME VALIDATION ===');
+
+    if (lessons.length > 0) {
+        const totalDuration = lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0);
+        updateTimeValidationDisplay(totalDuration);
+        console.log('Time validation refreshed');
+    } else {
+        console.log('No lessons to calculate duration for');
+    }
+}
+
+// Global test function - call this from browser console
+window.testTimeCalculation = function() {
+    console.log('=== GLOBAL TEST FUNCTION ===');
+    console.log('Current state:', {
+        selectedTime: selectedTime,
+        selectedBufferMinutes: window.selectedBufferMinutes,
+        selectedStartTime: window.selectedStartTime,
+        selectedEndTime: window.selectedEndTime
+    });
+
+    if (window.selectedStartTime && window.selectedEndTime) {
+        const result = calculateAvailableTimeForSlot();
+        console.log('calculateAvailableTimeForSlot result:', result);
+        alert(`Test Result: ${result} minutes\nCheck console for details`);
+    } else {
+        alert('No time slot selected');
+    }
+};
+
+// Global debug function
+window.debugTimeValidation = function() {
+    console.log('=== DEBUG TIME VALIDATION ===');
+    console.log('Window variables:', {
+        selectedTime: window.selectedTime,
+        selectedBufferMinutes: window.selectedBufferMinutes,
+        selectedStartTime: window.selectedStartTime,
+        selectedEndTime: window.selectedEndTime,
+        selectedTimeSlot: window.selectedTimeSlot
+    });
+
+    // Check if updateTimeValidationDisplay is being called
+    if (lessons.length > 0) {
+        const totalDuration = lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0);
+        console.log('Total duration:', totalDuration);
+        updateTimeValidationDisplay(totalDuration);
+    }
+
+    // Check if calculateAvailableTimeForSlot is working
+    const availableTime = calculateAvailableTimeForSlot();
+    console.log('Available time from function:', availableTime);
+
+    alert(`Debug Complete!\nAvailable Time: ${availableTime} minutes\nCheck console for details`);
+};
+
+// Simple test function - bypasses all complex logic
+window.simpleTest = function() {
+    alert('=== SIMPLE TEST ===');
+
+    if (!window.selectedStartTime || !window.selectedEndTime) {
+        alert('No time slot selected!');
+        return;
+    }
+
+    const startMinutes = timeToMinutes(window.selectedStartTime);
+    const endMinutes = timeToMinutes(window.selectedEndTime);
+    const totalTime = endMinutes - startMinutes;
+    const slotInterval = adminSettings.timeInterval || 30;
+
+    // Simple calculation: count slots that can fit
+    let validSlots = 0;
+    for (let time = startMinutes; time < endMinutes; time += slotInterval) {
+        if ((endMinutes - time) > slotInterval) {
+            validSlots++;
+        }
+    }
+
+    const availableTime = (validSlots * slotInterval) - (window.selectedBufferMinutes || 0);
+
+    alert(`SIMPLE CALCULATION:\nStart: ${window.selectedStartTime} (${startMinutes}min)\nEnd: ${window.selectedEndTime} (${endMinutes}min)\nTotal: ${totalTime}min\nValid Slots: ${validSlots}\nAvailable: ${availableTime}min`);
+
+    console.log('Simple test result:', { startMinutes, endMinutes, totalTime, validSlots, availableTime });
+};
 
 function submitBooking() {
     // Calculate total minutes from lessons
@@ -1190,6 +1746,18 @@ function resetSelection() {
         document.getElementById('step2').style.display = 'none';
         document.getElementById('step1').style.display = 'block';
     }
+
+    // Hide time validation display
+    const timeValidationDisplay = document.getElementById('timeValidationDisplay');
+    if (timeValidationDisplay) timeValidationDisplay.style.display = 'none';
+
+    // Clear selected coach info
+    window.selectedCoachName = null;
+    window.selectedCoachId = null;
+    window.selectedBufferMinutes = null;
+    window.selectedTimeSlot = null;
+    window.selectedStartTime = null;
+    window.selectedEndTime = null;
 
     renderLessons();
 }
