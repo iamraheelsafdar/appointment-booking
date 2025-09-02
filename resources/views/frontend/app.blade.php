@@ -131,6 +131,10 @@
                                 <option value="Returning">Returning Player</option>
                                 <option value="FreeTrial">Free Trial Player</option>
                             </select>
+                            <div id="freeTrialInfo" class="form-text text-info" style="display: none;">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Free Trial Players:</strong> Limited to 60 minutes total duration and 1 lesson only.
+                            </div>
                         </div>
 
 {{--                        <div class="form-group">--}}

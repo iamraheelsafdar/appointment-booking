@@ -853,6 +853,16 @@ function validateStep1() {
         }
     });
 
+    // Free trial duration validation
+    const isFreeTrial = document.getElementById('playerType')?.value === 'FreeTrial';
+    if (isFreeTrial) {
+        const totalDuration = lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0);
+        if (totalDuration > 60) {
+            errorMessages.push(`Free trial players cannot book more than 60 minutes total duration. Current total: ${totalDuration} minutes.`);
+            isValid = false;
+        }
+    }
+
     // Time validation
     const timeValidation = validateLessonDuration();
     if (!timeValidation.valid) {
@@ -936,6 +946,12 @@ function onPlayerTypeChange(val) {
     const addBtn = document.getElementById('addLessonBtn');
     if (addBtn) addBtn.style.display = isFreeTrial ? 'none' : 'inline-flex';
 
+    // Show/hide free trial info message
+    const freeTrialInfo = document.getElementById('freeTrialInfo');
+    if (freeTrialInfo) {
+        freeTrialInfo.style.display = isFreeTrial ? 'block' : 'none';
+    }
+
     // Enforce a single lesson for Free Trial
     if (isFreeTrial && lessons.length > 1) {
         lessons = [lessons[0]];
@@ -945,9 +961,12 @@ function onPlayerTypeChange(val) {
             if (idx > 0) card.remove();
         });
         updateLessonTitles();
-    updateAllCalculations();
-        showToast('info', 'Free Trial Mode', 'Free Trial players can only book one lesson.');
+        updateAllCalculations();
+        showToast('info', 'Free Trial Mode', 'Free Trial players can only book one lesson and are limited to 60 minutes total duration.');
     }
+
+    // Re-render lessons to update duration options
+    renderLessons();
 
     // Update remove buttons visibility
     updateRemoveButtons();
@@ -1030,6 +1049,32 @@ function updateLesson(lessonId, field, value) {
 
     // If updating duration, validate it doesn't exceed available time
     if (field === 'duration') {
+        // Check free trial duration limit first
+        const isFreeTrial = document.getElementById('playerType')?.value === 'FreeTrial';
+        if (isFreeTrial) {
+            const totalDuration = lessons.reduce((sum, l) => {
+                if (l.id === lessonId) {
+                    return sum + value; // Use new value for current lesson
+                }
+                return sum + (l.duration || 0);
+            }, 0);
+            
+            if (totalDuration > 60) {
+                // Rollback the change
+                lesson[field] = originalValue;
+                
+                showToast('warning', 'Duration Limit Exceeded', `Free trial players cannot exceed 60 minutes total duration. Current total would be: ${totalDuration} minutes.`);
+                
+                // Reset the form field to original value
+                const durationSelect = document.querySelector(`[onchange*="updateLesson(${lessonId}, 'duration'"]`);
+                if (durationSelect) {
+                    durationSelect.value = originalValue;
+                }
+                
+                return;
+            }
+        }
+        
         const validation = validateLessonDuration();
 
         if (!validation.valid) {
@@ -1062,7 +1107,10 @@ function updateLesson(lessonId, field, value) {
 
 function generateDurationOptions(selectedDuration) {
     let options = '';
-    for (let i = adminSettings.timeInterval; i <= 120; i += adminSettings.timeInterval) {
+    const isFreeTrial = document.getElementById('playerType')?.value === 'FreeTrial';
+    const maxDuration = isFreeTrial ? 60 : 120;
+    
+    for (let i = adminSettings.timeInterval; i <= maxDuration; i += adminSettings.timeInterval) {
         const selected = i === selectedDuration ? 'selected' : '';
         options += `<option value="${i}" ${selected}>${i} minutes</option>`;
     }

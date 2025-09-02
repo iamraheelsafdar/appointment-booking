@@ -245,6 +245,14 @@ class FrontEndService implements FrontEndInterface
                 if (!$coach) {
                     return response()->json(['errors' => ['Selected coach is not available.']], 422);
                 }
+                
+                // Check if this is a free trial player and validate duration limit
+                if ($request->playerType === 'FreeTrial') {
+                    $totalLessonTime = collect($request->lessons)->sum('duration');
+                    if ($totalLessonTime > 60) {
+                        return response()->json(['errors' => ['Free trial players cannot book more than 60 minutes total duration. Current total: ' . $totalLessonTime . ' minutes.']], 422);
+                    }
+                }
 
                 // Validate total lesson time against available slot time
                 $totalLessonTime = collect($request->lessons)->sum('duration');
@@ -325,6 +333,14 @@ class FrontEndService implements FrontEndInterface
                     User::where('user_type', 'Coach')->where('coach_type', 'Normal Coach')->where('status', 1)->whereHas('google')
                         ->inRandomOrder()
                         ->first();
+                
+                // Check if this is a free trial player and validate duration limit (for auto-assigned coaches)
+                if ($request->playerType === 'FreeTrial') {
+                    $totalLessonTime = collect($request->lessons)->sum('duration');
+                    if ($totalLessonTime > 60) {
+                        return response()->json(['errors' => ['Free trial players cannot book more than 60 minutes total duration. Current total: ' . $totalLessonTime . ' minutes.']], 422);
+                    }
+                }
             }
 
             $appointmentId = Appointment::create((new CreateAppointmentDTO($request, $coach))->toArray());
