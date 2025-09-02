@@ -187,12 +187,10 @@
 
                 <!-- Time Validation Display -->
                 <div id="timeValidationDisplay" class="time-validation-display" style="display: none;">
-                    <div class="alert alert-info">
+                    <div class="alert alert-info p-2">
                         <i class="fas fa-clock"></i>
                         <strong>Time Validation:</strong>
                         <span id="timeValidationText">Available: 0 minutes | Used: 0 minutes | Remaining: 0 minutes</span>
-                        <button type="button" class="btn btn-sm btn-outline-info ms-2" onclick="testTimeCalculation()">Test Calculation</button>
-                        <button type="button" class="btn btn-sm btn-outline-warning ms-2" onclick="refreshTimeValidation()">Refresh</button>
                     </div>
                 </div>
 
