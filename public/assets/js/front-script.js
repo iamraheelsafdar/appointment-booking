@@ -893,14 +893,15 @@ function calculateLessonPrice(lesson) {
 function updateAllCalculations() {
     const totalPrice = lessons.reduce((sum, lesson) => sum + calculateLessonPrice(lesson), 0);
     const totalDuration = lessons.reduce((sum, lesson) => sum + lesson.duration, 0);
+    const isFreeTrial = document.getElementById('playerType')?.value === 'FreeTrial';
 
     const totalPriceElement = document.getElementById('totalPrice');
     const totalDurationElement = document.getElementById('totalDuration');
     const summaryTotalPriceElement = document.getElementById('summaryTotalPrice');
 
-    if (totalPriceElement) totalPriceElement.textContent = `$${totalPrice}`;
+    if (totalPriceElement) totalPriceElement.textContent = isFreeTrial ? 'FREE TRIAL' : `$${totalPrice}`;
     if (totalDurationElement) totalDurationElement.textContent = `${totalDuration} minutes`;
-    if (summaryTotalPriceElement) summaryTotalPriceElement.textContent = `Total: $${totalPrice}`;
+    if (summaryTotalPriceElement) summaryTotalPriceElement.textContent = isFreeTrial ? 'Total: FREE TRIAL' : `Total: $${totalPrice}`;
 
     if (currentStep === 2) {
         generateSummary();
@@ -1023,9 +1024,9 @@ function generateDetailedBookingSummary() {
     summary += `Time: ${formatTimeDisplay(selectedTime)}\n`;
     summary += `Duration: ${totalDuration} minutes\n`;
     if (!isFreeTrial) {
-        summary += `Total Price: $${totalPrice.toFixed(2)}\n\n`;
+        // summary += `Total Price: $${totalPrice.toFixed(2)}\n\n`;
     } else {
-        summary += "Total Price: FREE TRIAL\n\n";
+        // summary += "Total Price: FREE TRIAL\n\n";
     }
 
     // Lessons Details

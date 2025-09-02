@@ -554,14 +554,15 @@ class FrontEndService implements FrontEndInterface
             $bookingDetails = "Free Trial Booking\n";
             $bookingDetails .= "Date: " . $request->selectedDate . "\n";
             $bookingDetails .= "Time: " . $request->selectedTimeSlot . "\n";
-            $bookingDetails .= "Player: " . $request->firstName . " " . $request->lastName . "\n";
+            $bookingDetails .= "Player: " . $request->fullName . "\n";
             $bookingDetails .= "Email: " . $request->email . "\n";
-            $bookingDetails .= "Phone: " . $request->phone . "\n";
+            $bookingDetails .= "Address: " . $request->address . "\n";
+            $bookingDetails .= "Coach: " . ($appointment->coach ? $appointment->coach->name : 'Not assigned') . "\n";
             
             if (!empty($request->lessons)) {
                 $bookingDetails .= "Lessons:\n";
                 foreach ($request->lessons as $lesson) {
-                    $bookingDetails .= "- " . $lesson['name'] . " (" . $lesson['duration'] . " min)\n";
+                    $bookingDetails .= "- " . $lesson['type'] . " (" . $lesson['duration'] . " min)\n";
                 }
             }
             
@@ -569,7 +570,7 @@ class FrontEndService implements FrontEndInterface
             
             // Send emails
             \Log::info('Dispatching player email to: ' . $request->email);
-            AppointmentBookingjob::dispatch($request->firstName . " " . $request->lastName, $request->email, $bookingDetails);
+            AppointmentBookingjob::dispatch($request->fullName, $request->email, $bookingDetails);
             
             if ($admin) {
                 \Log::info('Dispatching admin email to: ' . $admin->email);
