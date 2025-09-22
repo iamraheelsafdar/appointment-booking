@@ -19,11 +19,11 @@
             </div>
             <div class="form-floating">
                 <select class="form-control" aria-label="Default select example" id="status"
-                        name="appointment_status">
-                    <option selected>{{$appointment['appointment_status']}}</option>
-                    <option value="Pending">Pending</option>
+                        name="appointment_status" {{$appointment['appointment_status'] == 'Pending' || $appointment['appointment_status'] == 'Rejected' ? 'disabled' : '' }}>
+                    <option selected >{{$appointment['appointment_status']}}</option>
+{{--                    <option value="Pending">Pending</option>--}}
                     <option value="Rejected">Rejected</option>
-                    <option value="Declined">Declined</option>
+{{--                    <option value="Declined">Declined</option>--}}
                     <option value="Confirmed">Confirmed</option>
                 </select>
                 <label for="status"><i class="fas fa-arrow-up me-2"></i>Update Status</label>

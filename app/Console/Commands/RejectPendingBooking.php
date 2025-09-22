@@ -20,15 +20,29 @@ class RejectPendingBooking extends Command
      *
      * @var string
      */
-    protected $description = 'This command is use to reject all the pending appointment after 30 min';
+    protected $description = 'This command is use to reject all the pending appointment after 10 min';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        Appointment::where('appointment_status', 'Pending')
-            ->where('created_at', '<', Carbon::now()->subMinutes(30))
-            ->update(['appointment_status' => 'Declined']);
+        $this->info('Starting auto-rejection of pending appointments...');
+
+        $cutoffTime = Carbon::now()->subMinutes(5);
+        $pendingAppointments = Appointment::where('appointment_status', 'Pending')
+            ->where('created_at', '<', $cutoffTime)
+            ->get();
+
+        $rejectedCount = 0;
+
+        foreach ($pendingAppointments as $appointment) {
+            $this->info("Rejecting appointment ID: {$appointment->id} (Created: {$appointment->created_at})");
+            $appointment->update(['appointment_status' => 'Declined']);
+            $rejectedCount++;
+        }
+
+        $this->info("Auto-rejection completed.");
+        $this->info("Rejected: {$rejectedCount} appointments");
     }
 }

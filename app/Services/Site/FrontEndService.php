@@ -159,7 +159,7 @@ class FrontEndService implements FrontEndInterface
         }
 
         // Get actual booked slots from appointments with coach information
-        $appointments = Appointment::whereIn('appointment_status', ['Confirmed'])
+        $appointments = Appointment::whereIn('appointment_status', ['Confirmed', 'Pending'])
             ->whereDate('selected_date', '>=', Carbon::today())
             ->with('coach')
             ->get();
@@ -233,6 +233,12 @@ class FrontEndService implements FrontEndInterface
                 return response()->json(['errors' => ['One or more slots are already booked.']], 422);
             }
 
+            // Check address eligibility for player type
+            $existingAppointment = Appointment::where('address', $request->address)->exists();
+
+            if ($request->playerType === 'FreeTrial' && $existingAppointment) {
+                return response()->json(['errors' => ['You are not eligible for free trial player. This address has been used before.']], 422);
+            }
             // Check if a specific coach was selected
             if (!empty($request->selectedCoachId)) {
                 $coach = User::where('user_type', 'Coach')
@@ -245,7 +251,7 @@ class FrontEndService implements FrontEndInterface
                 if (!$coach) {
                     return response()->json(['errors' => ['Selected coach is not available.']], 422);
                 }
-                
+
                 // Check if this is a free trial player and validate duration limit
                 if ($request->playerType === 'FreeTrial') {
                     $totalLessonTime = collect($request->lessons)->sum('duration');
@@ -256,17 +262,17 @@ class FrontEndService implements FrontEndInterface
 
                 // Validate total lesson time against available slot time
                 $totalLessonTime = collect($request->lessons)->sum('duration');
-                
+
                 // Calculate actual available time from the selected time slot
                 // Handle time slot format: "1:30 PM - 2:30 PM, Thu, Sep 11, 2025"
                 $timeSlotParts = explode(' - ', $request->selectedTimeSlot);
                 if (count($timeSlotParts) === 2) {
                     // Extract just the time part from the start time
                     $startTimeStr = trim($timeSlotParts[0]);
-                    
+
                     // Extract just the time part from the end time (remove date part)
                     $endTimeStr = trim(explode(',', $timeSlotParts[1])[0]);
-                    
+
                     try {
                         $startTime = Carbon::createFromFormat('g:i A', $startTimeStr);
                         $endTime = Carbon::createFromFormat('g:i A', $endTimeStr);
@@ -279,7 +285,7 @@ class FrontEndService implements FrontEndInterface
                     // Fallback to 60 minutes if time slot parsing fails
                     $availableTime = 60;
                 }
-                
+
                 // Apply buffer minutes if specified
                 if (!empty($request->selectedBufferMinutes)) {
                     $availableTime = $availableTime - $request->selectedBufferMinutes;
@@ -333,7 +339,7 @@ class FrontEndService implements FrontEndInterface
                     User::where('user_type', 'Coach')->where('coach_type', 'Normal Coach')->where('status', 1)->whereHas('google')
                         ->inRandomOrder()
                         ->first();
-                
+
                 // Check if this is a free trial player and validate duration limit (for auto-assigned coaches)
                 if ($request->playerType === 'FreeTrial') {
                     $totalLessonTime = collect($request->lessons)->sum('duration');
@@ -470,12 +476,18 @@ class FrontEndService implements FrontEndInterface
                         if ($transaction->appointment) {
                             $transaction->appointment->update(['appointment_status' => 'Confirmed']);
                         }
-                        self::assignToGoogleCalender($admin, $transaction);
+                        $adminCalendarResult = self::assignToGoogleCalender($admin, $transaction);
+                        if (is_string($adminCalendarResult) && str_contains($adminCalendarResult, 'not accessible')) {
+                            \Log::warning('Admin Google Calendar not accessible: ' . $adminCalendarResult);
+                        }
 
                         if (isset($transaction->appointment->coach)) {
                             $coach = $transaction->appointment->coach;
                             AppointmentReceivingjob::dispatch($coach->name, $coach->email, $bookingDetails);
-                            self::assignToGoogleCalender($transaction->appointment->coach, $transaction);
+                            $coachCalendarResult = self::assignToGoogleCalender($transaction->appointment->coach, $transaction);
+                            if (is_string($coachCalendarResult) && str_contains($coachCalendarResult, 'not accessible')) {
+                                \Log::warning('Coach Google Calendar not accessible: ' . $coachCalendarResult);
+                            }
                         }
                     }
                     break;
@@ -507,11 +519,11 @@ class FrontEndService implements FrontEndInterface
         try {
             $client = Helper::getGoogleClientForUser($user);
 
-            // Check if client is a string (error message)
-            if (is_string($client)) {
-                \Log::error('Google Calendar connection error: ' . $client);
-                return;
-            }
+        // Check if client is a string (error message)
+        if (is_string($client)) {
+            \Log::error('Google Calendar connection error: ' . $client);
+            return 'Google Calendar is not accessible. Please login to your calendar again.';
+        }
 
             $calendarService = new Google_Service_Calendar($client);
 
@@ -587,6 +599,7 @@ class FrontEndService implements FrontEndInterface
         } catch (\Exception $e) {
             \Log::error('Google Calendar event creation failed: ' . $e->getMessage());
             \Log::error('User: ' . $user->id . ', Transaction: ' . $transaction->id);
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
         }
     }
 
@@ -617,6 +630,9 @@ class FrontEndService implements FrontEndInterface
                 $bookingDetails .= "Lessons:\n";
                 foreach ($request->lessons as $lesson) {
                     $bookingDetails .= "- " . $lesson['type'] . " (" . $lesson['duration'] . " min)\n";
+                    if (!empty($lesson['description'])) {
+                        $bookingDetails .= "  Description: " . $lesson['description'] . "\n";
+                    }
                 }
             }
 
@@ -639,7 +655,10 @@ class FrontEndService implements FrontEndInterface
                 $mockTransaction->description = $bookingDetails;
                 $mockTransaction->appointment = $appointment;
 
-                self::assignToGoogleCalender($admin, $mockTransaction);
+                $calendarResult = self::assignToGoogleCalender($admin, $mockTransaction);
+                if (is_string($calendarResult) && str_contains($calendarResult, 'not connected')) {
+                    \Log::warning('Admin Google Calendar not accessible: ' . $calendarResult);
+                }
             } else {
                 \Log::info('Admin Google Calendar not connected or admin not found');
             }
@@ -653,7 +672,10 @@ class FrontEndService implements FrontEndInterface
                 $mockTransaction->description = $bookingDetails;
                 $mockTransaction->appointment = $appointment;
 
-                self::assignToGoogleCalender($appointment->coach, $mockTransaction);
+                $calendarResult = self::assignToGoogleCalender($appointment->coach, $mockTransaction);
+                if (is_string($calendarResult) && str_contains($calendarResult, 'not connected')) {
+                    \Log::warning('Coach Google Calendar not accessible: ' . $calendarResult);
+                }
             } else {
                 \Log::info('Coach Google Calendar not connected or coach not found. Coach: ' . ($appointment->coach ? $appointment->coach->id : 'No coach'));
             }
@@ -688,6 +710,9 @@ class FrontEndService implements FrontEndInterface
             $bookingDetails .= "Lessons:\n";
             foreach ($appointment->lessons as $lesson) {
                 $bookingDetails .= "- " . ($lesson->type ?: 'Lesson type not specified') . " (" . ($lesson->duration ?: 'Duration not specified') . " min)\n";
+                if (!empty($lesson->description)) {
+                    $bookingDetails .= "  Description: " . $lesson->description . "\n";
+                }
             }
         }
 

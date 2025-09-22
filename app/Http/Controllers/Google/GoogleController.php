@@ -41,10 +41,23 @@ class GoogleController extends Controller
         $token = $client->fetchAccessTokenWithAuthCode($request->code);
 
         if (isset($token['error'])) {
-            return redirect()->route('dashboard')->with('error', 'Failed to authenticate with Google.');
+            return redirect()->route('dashboard')->with('errors', 'Failed to authenticate with Google.');
         }
 
         $client->setAccessToken($token);
+
+        // Check if the token has the required calendar scopes
+        $requiredScopes = [
+            'https://www.googleapis.com/auth/calendar.events',
+            'https://www.googleapis.com/auth/calendar.readonly'
+        ];
+
+        $grantedScopes = explode(' ', $token['scope'] ?? '');
+        $hasRequiredScopes = array_intersect($requiredScopes, $grantedScopes);
+
+        if (empty($hasRequiredScopes)) {
+            return redirect()->route('dashboard')->with('errors', 'Google Calendar permissions are required. Please grant calendar access to connect your Google Calendar.');
+        }
 
         $googleService = new Google_Service_Oauth2($client);
         $userInfo = $googleService->userinfo->get();

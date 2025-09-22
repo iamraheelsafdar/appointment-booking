@@ -10,12 +10,12 @@ const adminSettings = {
 // Tennis lesson pricing
 const rateStructure = {
     "Private": {
-        base: 65,
-        perDuration: 20 // Add $20 for each duration increment
+        base: 85, // Base price for 30 minutes
+        perDuration: 20 // Add $20 for each additional 30-minute increment
     },
     "Semi-Private": {
-        base: 80,
-        perDuration: 20 // Add $20 for each duration increment
+        base: 100, // Base price for 30 minutes
+        perDuration: 20 // Add $20 for each additional 30-minute increment
     },
     "Group": {
         base: 45, // Base for 3 players
@@ -939,8 +939,10 @@ function validateEmail(email) {
     return re.test(email);
 }
 
+
 function onPlayerTypeChange(val) {
     const isFreeTrial = (val === 'FreeTrial');
+
 
     // Toggle the Add Lesson button
     const addBtn = document.getElementById('addLessonBtn');
@@ -963,7 +965,7 @@ function onPlayerTypeChange(val) {
             if (idx > 0) card.remove();
         });
         updateLessonTitles();
-        updateAllCalculations();
+    updateAllCalculations();
         showToast('info', 'Free Trial Mode', 'Free Trial players can only book one lesson and are limited to 60 minutes total duration.');
     }
 
@@ -1375,31 +1377,9 @@ function generateSummary() {
         const lessonPrice = calculateLessonPrice(lesson);
         let pricingDetails = '';
 
-        // Add pricing breakdown for better transparency
+        // Show simple pricing without breakdown
         if (!isFreeTrial) {
-            switch (lesson.type) {
-                case 'Private':
-                    const privateDurationIncrements = Math.ceil(lesson.duration / adminSettings.timeInterval);
-                    pricingDetails = privateDurationIncrements === 1 ?
-                        'Base rate' :
-                        `Base $${rateStructure.Private.base} + $${rateStructure.Private.perDuration} × ${privateDurationIncrements - 1} duration`;
-                    break;
-                case 'Semi-Private':
-                    const semiPrivateDurationIncrements = Math.ceil(lesson.duration / adminSettings.timeInterval);
-                    pricingDetails = semiPrivateDurationIncrements === 1 ?
-                        'Base rate' :
-                        `Base $${rateStructure['Semi-Private'].base} + $${rateStructure['Semi-Private'].perDuration} × ${semiPrivateDurationIncrements - 1} duration`;
-                    break;
-                case 'Group':
-                    const extraPlayers = Math.max(0, lesson.players - 3);
-                    pricingDetails = extraPlayers === 0 ?
-                        'Base for 3 players' :
-                        `Base $${rateStructure.Group.base} + $${rateStructure.Group.perPlayer} × ${extraPlayers} extra players`;
-                    break;
-                case 'Cardio Tennis':
-                    pricingDetails = `$${rateStructure['Cardio Tennis'].perPlayer} × ${lesson.players} players`;
-                    break;
-            }
+            pricingDetails = `$${lessonPrice}`;
         }
 
         return `
@@ -1562,18 +1542,22 @@ function submitBooking() {
         },
         body: JSON.stringify(bookingData)
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+    .then(async response => {
+        const contentType = response.headers.get('content-type');
+        let data;
+
+        if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+        } else {
+            data = await response.text();
         }
 
-        // Check if response is JSON or plain text
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-            return response.json();
-        } else {
-            return response.text();
+        if (!response.ok) {
+            // API returned an error (e.g. 422 with errors array)
+            throw data; // pass data to catch
         }
+
+        return data;
     })
     .then(data => {
 
@@ -1613,7 +1597,13 @@ function submitBooking() {
     })
     .catch(error => {
         console.error('Error:', error);
-        showToast('danger', 'Network Error', 'Unable to connect to server. Please check your connection and try again.');
+
+        if (error.errors && Array.isArray(error.errors)) {
+            showToast('danger', 'Booking Failed', error.errors[0]);
+        } else {
+            showToast('danger', 'Network Error', 'Unable to connect to server. Please check your connection and try again.');
+        }
+
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
     });

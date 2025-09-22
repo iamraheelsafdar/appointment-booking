@@ -12,7 +12,11 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-         $schedule->command('app:reject-pending-booking')->everyTenMinutes();
+        // Auto-reject pending appointments after 10 minutes (updated from 30 minutes)
+        $schedule->command('app:reject-pending-booking')->everyFiveMinutes();
+        
+        // Refresh Google tokens every hour
+        $schedule->command('google:refresh-auth')->hourly();
     }
 
     /**

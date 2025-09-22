@@ -78,8 +78,7 @@ class Helper
         $tokenData = Google::where('user_id', $user->id)->first();
 
         if (!$tokenData) {
-            session()->flash('errors', 'You need to login to access this feature.');
-            return route('dashboard');
+            return 'Google Calendar is not accessible. Please login to your calendar again.';
         }
 
         $client = new Google_Client();
@@ -100,12 +99,23 @@ class Helper
 
         // Refresh token if expired
         if ($client->isAccessTokenExpired()) {
-            $newToken = $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
-            $tokenData->update([
-                'access_token' => $newToken['access_token'],
-                'expires_in' => $newToken['expires_in'],
-            ]);
-            $client->setAccessToken($newToken);
+            try {
+                $newToken = $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
+                
+                if (isset($newToken['error'])) {
+                    \Log::error('Google token refresh failed: ' . json_encode($newToken));
+                    return 'Google Calendar is not accessible. Please login to your calendar again.';
+                }
+                
+                $tokenData->update([
+                    'access_token' => $newToken['access_token'],
+                    'expires_in' => $newToken['expires_in'],
+                ]);
+                $client->setAccessToken($newToken);
+            } catch (\Exception $e) {
+                \Log::error('Google token refresh exception: ' . $e->getMessage());
+                return 'Google Calendar is not accessible. Please login to your calendar again.';
+            }
         }
 
         // Check if the token has the required scopes
@@ -119,8 +129,7 @@ class Helper
 
         if (empty($hasRequiredScopes)) {
             // Token doesn't have required scopes, need to re-authenticate
-            session()->flash('errors', 'Google Calendar permissions need to be updated. Please reconnect your Google Calendar.');
-            return route('redirectToGoogle');
+            return 'Google Calendar is not accessible. Please login to your calendar again.';
         }
 
         return $client;
