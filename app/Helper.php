@@ -146,11 +146,22 @@ class Helper
     {
         try {
             $client = Helper::getGoogleClientForUser($user);
+            
+            // Check if client is a string (error message) instead of Google_Client object
+            if (is_string($client)) {
+                \Log::warning("Cannot remove Google Calendar event for user {$user->id}: {$client}");
+                return;
+            }
+            
             $calendarService = new Google_Service_Calendar($client);
-
             $calendarService->events->delete('primary', $googleEventId);
+            
+            \Log::info("Successfully removed Google Calendar event {$googleEventId} for user {$user->id}");
         } catch (\Google_Service_Exception $e) {
-            self::errorHandling($request, $e, __FUNCTION__);
+            // Log the error but don't throw it to prevent breaking the appointment update
+            \Log::warning("Failed to remove Google Calendar event {$googleEventId} for user {$user->id}: " . $e->getMessage());
+        } catch (\Exception $e) {
+            \Log::warning("Unexpected error removing Google Calendar event {$googleEventId} for user {$user->id}: " . $e->getMessage());
         }
     }
 }

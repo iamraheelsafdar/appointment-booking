@@ -6,6 +6,7 @@ use App\Http\Resources\Appointment\GetAppointmentResource;
 use App\Interfaces\Appointment\AppointmentInterface;
 use App\Filters\Appointment\AppointmentDateFilter;
 use App\Jobs\AppointmentBookingjob;
+use App\Jobs\AppointmentCancellationJob;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Site\FrontEndService;
@@ -83,6 +84,8 @@ class AppointmentService implements AppointmentInterface
             }
 
             if ($request->appointment_status == 'Declined' || $request->appointment_status == 'Rejected') {
+                // Update appointment status first so emails show correct status
+                $appointment->update(['appointment_status' => $request->appointment_status]);
 
                 if ($appointment->google_event_id) {
                     foreach (json_decode($appointment->google_event_id, true) as $detail) {
@@ -90,6 +93,9 @@ class AppointmentService implements AppointmentInterface
                         Helper::removeBooking($user, $detail['event_id'], $request);
                     }
                 }
+
+                // Send cancellation emails
+                self::sendCancellationEmails($appointment, $request->appointment_status);
             }
             $assignAppointment = Appointment::where('id', $request->id)->where('coach_id', '!=', $request['assign_to'])->first();
             if ($assignAppointment) {
@@ -102,16 +108,19 @@ class AppointmentService implements AppointmentInterface
                         Helper::removeBooking($user, $removeAppointment[1]['event_id'], $request);
                     }
                     $user = User::where('id', $request['assign_to'])->first();
-                    AppointmentBookingjob::dispatch($user->name,$user->email,$appointment->description);
+                    AppointmentReceivingjob::dispatch($user->name, $user->email, $appointment->description);
                     FrontEndService::assignToGoogleCalender($user, $transaction);
                 }
 
             }
 
 
-            $appointment->update([
-                'appointment_status' => $request->appointment_status
-            ]);
+            // Status already updated above for declined/rejected appointments
+            if ($request->appointment_status != 'Declined' && $request->appointment_status != 'Rejected') {
+                $appointment->update([
+                    'appointment_status' => $request->appointment_status
+                ]);
+            }
             session()->flash('success', "Appointment status updated successfully.");
             DB::commit();
             return redirect()->route('appointmentsView');
@@ -120,5 +129,87 @@ class AppointmentService implements AppointmentInterface
             session()->flash('errors', "Something went wrong");
             return Helper::errorHandling($request, $e, __FUNCTION__);
         }
+    }
+
+    /**
+     * Send cancellation emails to customer, coach, and admin
+     */
+    private static function sendCancellationEmails($appointment, $status)
+    {
+        try {
+            // Generate booking details for email
+            $bookingDetails = self::generateBookingDetailsForCancellation($appointment);
+
+            // Get customer information
+            $customerName = $appointment->full_name ?? 'Customer';
+            $customerEmail = $appointment->email ?? null;
+
+            // Get coach information
+            $coachName = null;
+            $coachEmail = null;
+            if ($appointment->coach) {
+                $coachName = $appointment->coach->name;
+                $coachEmail = $appointment->coach->email;
+            }
+
+            // Get admin information
+            $admin = User::where('user_type', 'Admin')->first();
+            $adminName = $admin ? $admin->name : null;
+            $adminEmail = $admin ? $admin->email : null;
+
+            // Determine cancellation reason
+            $cancellationReason = $status === 'Declined' ? 'Appointment has been declined' : 'Appointment has been rejected';
+
+            // Dispatch cancellation job
+            $cancellationJob = new AppointmentCancellationJob(
+                $customerName,
+                $customerEmail,
+                $bookingDetails,
+                $cancellationReason
+            );
+
+            if ($coachName && $coachEmail) {
+                $cancellationJob->setCoachInfo($coachName, $coachEmail);
+            }
+
+            if ($adminName && $adminEmail) {
+                $cancellationJob->setAdminInfo($adminName, $adminEmail);
+            }
+
+            dispatch($cancellationJob);
+
+            \Log::info("Cancellation emails dispatched for appointment ID: {$appointment->id}");
+
+        } catch (\Exception $e) {
+            \Log::error("Failed to send cancellation emails for appointment ID: {$appointment->id}. Error: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Generate booking details for cancellation email
+     */
+    private static function generateBookingDetailsForCancellation($appointment)
+    {
+        $details = "Appointment Details:\n";
+        $details .= "Date: " . ($appointment->selected_date ?? 'N/A') . "\n";
+        $details .= "Time: " . ($appointment->selected_time_slot ?? 'N/A') . "\n";
+        $details .= "Player: " . ($appointment->name ?? 'N/A') . "\n";
+        $details .= "Email: " . ($appointment->email ?? 'N/A') . "\n";
+        $details .= "Address: " . ($appointment->address ?? 'N/A') . "\n";
+        $details .= "Coach: " . ($appointment->coach ? $appointment->coach->name : 'Not assigned') . "\n";
+        $details .= "Status: " . ($appointment->appointment_status ?? 'N/A') . "\n";
+        
+        // Add lessons if available
+        if ($appointment->lessons && $appointment->lessons->count() > 0) {
+            $details .= "\nLessons:\n";
+            foreach ($appointment->lessons as $lesson) {
+                $details .= "- " . ($lesson->type ?? 'N/A') . " (" . ($lesson->duration ?? 0) . " min)\n";
+                if ($lesson->description) {
+                    $details .= "  Description: " . $lesson->description . "\n";
+                }
+            }
+        }
+        
+        return $details;
     }
 }
