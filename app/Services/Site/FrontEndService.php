@@ -165,6 +165,9 @@ class FrontEndService implements FrontEndInterface
             ->get();
 
         $bookedSlots = [];
+        $siteSettings = SiteSettings::first();
+        $bufferMinutes = $siteSettings->buffer_minutes ?? 0;
+
         foreach ($appointments as $appointment) {
             $date = $appointment->selected_date;
             $timeSlot = $appointment->selected_time_slot;
@@ -178,14 +181,17 @@ class FrontEndService implements FrontEndInterface
                 $bookedSlots[$date][$coachId] = [];
             }
 
-            // Store the full time slot and customer info per coach
+            // Extend the time slot to include buffer minutes
+            $extendedTimeSlot = self::extendTimeSlotWithBuffer($timeSlot, $bufferMinutes);
+
+            // Store the extended time slot and customer info per coach
             $bookedSlots[$date][$coachId][] = [
-                'time' => $timeSlot,
-                'customer' => $appointment->full_name,
+                'time' => $extendedTimeSlot,
+                'customer' => $appointment->name,
                 'coach' => $appointment->coach->name ?? 'Auto-assigned',
                 'status' => $appointment->appointment_status,
-                'startTime' => $appointment->selected_time_slot,
-                'endTime' => $appointment->selected_time_slot, // Will be calculated based on lessons
+                'startTime' => $extendedTimeSlot,
+                'endTime' => $extendedTimeSlot,
                 'totalMinutes' => $appointment->total_minutes ?? 0
             ];
         }
@@ -717,5 +723,42 @@ class FrontEndService implements FrontEndInterface
         }
 
         return $bookingDetails;
+    }
+
+    /**
+     * Extend time slot to include buffer minutes
+     */
+    private static function extendTimeSlotWithBuffer($timeSlot, $bufferMinutes): string
+    {
+        if ($bufferMinutes <= 0) {
+            return $timeSlot;
+        }
+
+        // Parse the time slot format: "9:00 AM - 9:30 AM, Thu, Aug 28, 2025"
+        $parts = explode(',', $timeSlot, 2);
+        if (count($parts) !== 2) {
+            return $timeSlot; // Return original if format is unexpected
+        }
+
+        $timePart = trim($parts[0]);
+        $datePart = trim($parts[1]);
+
+        // Extract start and end times
+        $timeRange = explode(' - ', $timePart);
+        if (count($timeRange) !== 2) {
+            return $timeSlot; // Return original if format is unexpected
+        }
+
+        $startTime = trim($timeRange[0]);
+        $endTime = trim($timeRange[1]);
+
+        // Add buffer minutes to end time
+        $startCarbon = Carbon::createFromFormat('g:i A', $startTime);
+        $endCarbon = Carbon::createFromFormat('g:i A', $endTime)->addMinutes($bufferMinutes);
+
+        // Reconstruct the time slot with extended end time
+        $extendedTimePart = $startTime . ' - ' . $endCarbon->format('g:i A');
+        
+        return $extendedTimePart . ', ' . $datePart;
     }
 }
