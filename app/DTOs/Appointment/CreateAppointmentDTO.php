@@ -10,6 +10,7 @@ class CreateAppointmentDTO extends BaseDTO
     public mixed $coach_id;
     public mixed $name;
     public mixed $email;
+    public mixed $phone_number;
     public mixed $suburb;
     public mixed $address;
     public mixed $city;
@@ -30,6 +31,7 @@ class CreateAppointmentDTO extends BaseDTO
         }
         $this->name = $request->fullName;
         $this->email = $request->email;
+        $this->phone_number = $request->phoneNumber;
         $this->suburb = $request->suburb;
         $this->address = $request->address;
         $this->city = $request->city;

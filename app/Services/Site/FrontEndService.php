@@ -704,7 +704,7 @@ class FrontEndService implements FrontEndInterface
         $bookingDetails .= "Coach: " . ($appointment->coach ? $appointment->coach->name : 'Not assigned') . "\n";
         $bookingDetails .= "Player: " . ($appointment->name ?: 'Player name not available') . "\n";
         $bookingDetails .= "Email: " . ($appointment->email ?: 'Email not available') . "\n";
-        $bookingDetails .= "Phone: " . ($appointment->phone ?: 'Phone not available') . "\n";
+        $bookingDetails .= "Phone: " . ($appointment->phone_number ?: 'Phone not available') . "\n";
 
         if ($appointment->lessons && count($appointment->lessons) > 0) {
             $bookingDetails .= "Lessons:\n";

@@ -31,6 +31,7 @@ class AppointmentRequest extends BaseRequestApi
             'state' => 'required|max:150',
             'suburb' => 'required|max:150',
             'email' => 'required|email|max:150',
+            'phoneNumber' => 'required|string|max:20',
             'fullName' => 'required|max:150',
             'selectedDate' => 'required',
             'selectedTimeSlot' => 'required',

@@ -17,6 +17,12 @@
                        disabled readonly autocomplete="email" value="{{ $appointment['email'] }}">
                 <label for="email"><i class="fas fa-envelope me-2"></i>Email Address</label>
             </div>
+
+            <div class="form-floating">
+                <input type="tel" class="form-control" id="phone_number" name="phone_number" placeholder="Enter phone number"
+                       disabled readonly value="{{ $appointment['phone_number'] ?? 'N/A' }}">
+                <label for="phone_number"><i class="fas fa-phone me-2"></i>Phone Number</label>
+            </div>
             <div class="form-floating">
                 <select class="form-control" aria-label="Default select example" id="status"
                         name="appointment_status" {{$appointment['appointment_status'] == 'Pending' || $appointment['appointment_status'] == 'Rejected' ? 'disabled' : '' }}>

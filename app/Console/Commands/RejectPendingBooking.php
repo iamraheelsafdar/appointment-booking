@@ -115,6 +115,7 @@ class RejectPendingBooking extends Command
         $details .= "Time: " . ($appointment->selected_time_slot ?? 'N/A') . "\n";
         $details .= "Player: " . ($appointment->name ?? 'N/A') . "\n";
         $details .= "Email: " . ($appointment->email ?? 'N/A') . "\n";
+        $details .= "Phone: " . ($appointment->phone_number ?? 'N/A') . "\n";
         $details .= "Address: " . ($appointment->address ?? 'N/A') . "\n";
         $details .= "Coach: " . ($appointment->coach ? $appointment->coach->name : 'Not assigned') . "\n";
         $details .= "Status: " . ($appointment->appointment_status ?? 'Declined') . " (Auto-rejected after 5 minutes)\n";

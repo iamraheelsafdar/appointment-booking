@@ -123,7 +123,10 @@
                             <input type="email" class="form-control" id="email" placeholder="john@example.com">
                         </div>
 
-
+                        <div class="form-group">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="phoneNumber" placeholder="+1 (555) 123-4567">
+                        </div>
 
                         <div class="form-group position-relative">
                             <label class="form-label">Player Type</label>

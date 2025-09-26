@@ -23,6 +23,7 @@ class GetAppointmentResource extends JsonResource
             'city' => $this->city,
             'country' => $this->country,
             'postal_code'=>$this->postal_code,
+            'phone_number'=>$this->phone_number,
             'state' => $this->state,
             'appointment_status' => $this->appointment_status,
             'total_minutes' => $this->total_minutes,

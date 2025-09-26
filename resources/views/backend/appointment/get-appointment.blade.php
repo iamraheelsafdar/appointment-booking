@@ -28,6 +28,7 @@
                 <th>ID</th>
                 <th>Name</th>
                 <th>Email</th>
+                <th>Phone Number</th>
                 <th>Suburb</th>
                 <th>Address</th>
                 <th>City</th>
@@ -50,6 +51,7 @@
                     <td>{{ ($appointments['current_page'] - 1) * $appointments['per_page'] + $key + 1 }}</td>
                     <td>{{ $appointment['name'] }}</td>
                     <td>{{ $appointment['email'] }}</td>
+                    <td>{{ $appointment['phone_number'] ?? 'N/A' }}</td>
                     <td>{{ $appointment['suburb'] }}</td>
                     <td>{{ $appointment['address'] }}</td>
                     <td>{{ $appointment['city'] }}</td>
@@ -84,7 +86,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="15" class="text-center">No users found.</td>
+                    <td colspan="16" class="text-center">No users found.</td>
                 </tr>
             @endforelse
             </tbody>

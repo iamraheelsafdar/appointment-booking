@@ -40,6 +40,7 @@ class Availability extends Model
     public static function getMergedAvailability()
     {
         $availabilities = self::where('is_active', true)
+            ->whereHas('user.google')
             ->orderBy('day')
             ->orderBy('start_time')
             ->get()

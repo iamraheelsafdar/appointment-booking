@@ -807,6 +807,7 @@ function validateStep1() {
     // Existing validation...
     const fullName = document.getElementById('fullName').value.trim();
     const email = document.getElementById('email').value.trim();
+    const phoneNumber = document.getElementById('phoneNumber').value.trim();
     const suburb = document.getElementById('suburb').value;
     const address = document.getElementById('address').value.trim();
     const city = document.getElementById('city').value.trim();
@@ -822,6 +823,11 @@ function validateStep1() {
         isValid = false;
     } else if (!validateEmail(email)) {
         errorMessages.push('Please enter a valid email address');
+        isValid = false;
+    }
+
+    if (!phoneNumber) {
+        errorMessages.push('Phone number is required');
         isValid = false;
     }
 
@@ -1505,6 +1511,7 @@ function submitBooking() {
         playerType: document.getElementById('playerType')?.value || 'Returning',
         fullName: document.getElementById('fullName').value.trim(),
         email: document.getElementById('email').value.trim(),
+        phoneNumber: document.getElementById('phoneNumber').value.trim(),
         suburb: document.getElementById('suburb').value,
         address: document.getElementById('address').value.trim(),
         city: document.getElementById('city').value.trim(),
