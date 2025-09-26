@@ -1435,6 +1435,7 @@ function generateDetailedBookingSummary() {
     summary += "-----------------\n";
     summary += `Full Name: ${document.getElementById('fullName').value.trim()}\n`;
     summary += `Email: ${document.getElementById('email').value.trim()}\n`;
+    summary += `Phone: ${document.getElementById('phoneNumber').value.trim()}\n`;
     summary += `Player Type: ${document.getElementById('playerType')?.value || 'Returning'}\n`;
     summary += `Address: ${document.getElementById('address').value.trim()}\n`;
     summary += `Suburb: ${document.getElementById('suburb').value}\n`;

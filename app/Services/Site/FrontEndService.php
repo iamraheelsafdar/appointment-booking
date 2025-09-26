@@ -629,6 +629,7 @@ class FrontEndService implements FrontEndInterface
             $bookingDetails .= "Time: " . $request->selectedTimeSlot . "\n";
             $bookingDetails .= "Player: " . $request->fullName . "\n";
             $bookingDetails .= "Email: " . $request->email . "\n";
+            $bookingDetails .= "Phone: " . ($request->phoneNumber ?: 'Phone not available') . "\n";
             $bookingDetails .= "Address: " . $request->address . "\n";
             $bookingDetails .= "Coach: " . ($appointment->coach ? $appointment->coach->name : 'Not assigned') . "\n";
 
