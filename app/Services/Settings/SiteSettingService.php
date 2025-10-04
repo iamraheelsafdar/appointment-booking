@@ -28,9 +28,6 @@ class SiteSettingService implements SettingsInterface
      */
     public static function updateSetting($request): RedirectResponse
     {
-        if ($request->buffer_minutes != $request->slot_difference){
-            return redirect()->back()->with('errors', 'Buffer minutes and slot difference should be same.');
-        }
         $siteSettings = SiteSettings::firstOrCreate(['id' => 1]);
         $siteSettings->update([
             'title' => $request->title,

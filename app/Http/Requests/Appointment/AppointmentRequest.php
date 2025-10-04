@@ -40,7 +40,6 @@ class AppointmentRequest extends BaseRequestApi
             'playerType' => 'required|in:Returning,FreeTrial',
             'selectedCoach' => 'nullable|string',
             'selectedCoachId' => 'nullable|integer|exists:users,id',
-            'selectedBufferMinutes' => 'nullable|integer|min:0|max:60',
         ];
     }
 }

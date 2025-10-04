@@ -208,7 +208,8 @@ class FrontEndService implements FrontEndInterface
             'coachNames' => $coachNames,
             'coaches' => $coaches,
             'coachAvailability' => $coachAvailability,
-            'adminGoogleConnected' => $adminGoogleConnected
+            'adminGoogleConnected' => $adminGoogleConnected,
+            'siteSetting' => $siteSettings
         ]);
     }
 
@@ -243,7 +244,7 @@ class FrontEndService implements FrontEndInterface
             $existingAppointment = Appointment::where('address', $request->address)->exists();
 
             if ($request->playerType === 'FreeTrial' && $existingAppointment) {
-                return response()->json(['errors' => ['You are not eligible for free trial player. This address has been used before.']], 422);
+                return response()->json(['errors' => ["You can't book more than one free trial player please switch over returning player."]], 422);
             }
             // Check if a specific coach was selected
             if (!empty($request->selectedCoachId)) {
@@ -759,7 +760,7 @@ class FrontEndService implements FrontEndInterface
 
         // Reconstruct the time slot with extended end time
         $extendedTimePart = $startTime . ' - ' . $endCarbon->format('g:i A');
-        
+
         return $extendedTimePart . ', ' . $datePart;
     }
 }

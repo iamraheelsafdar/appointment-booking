@@ -10,19 +10,34 @@ const adminSettings = {
 // Tennis lesson pricing
 const rateStructure = {
     "Private": {
-        base: 85, // Base price for 30 minutes
-        perDuration: 20 // Add $20 for each additional 30-minute increment
+        base: 65, // Base price for 30 minutes
+        perDuration: 20 // Add $20 for each additional 15-minute increment
     },
     "Semi-Private": {
-        base: 100, // Base price for 30 minutes
-        perDuration: 20 // Add $20 for each additional 30-minute increment
+        base: 40, // Base price for 30 minutes
+        perDuration: 10 // Add $10 for each additional 15-minute increment
     },
     "Group": {
-        base: 45, // Base for 3 players
-        perPlayer: 10 // Add $10 for each additional player above 3
+        perPlayer: {
+            30: 25, // $25 per person for 30 minutes
+            45: 35, // $35 per person for 45 minutes
+            60: 45, // $45 per person for 60 minutes
+            75: 55, // $55 per person for 75 minutes
+            90: 65, // $65 per person for 90 minutes
+            105: 75, // $75 per person for 105 minutes
+            120: 85  // $85 per person for 120 minutes
+        }
     },
     "Cardio Tennis": {
-        perPlayer: 20 // $20 per person
+        perPlayer: {
+            30: 20, // $20 per person for 30 minutes
+            45: 25, // $25 per person for 45 minutes
+            60: 30, // $30 per person for 60 minutes
+            75: 35, // $35 per person for 75 minutes
+            90: 40, // $40 per person for 90 minutes
+            105: 45, // $45 per person for 105 minutes
+            120: 50  // $50 per person for 120 minutes
+        }
     }
 };
 
@@ -631,7 +646,7 @@ function selectTime(time, element, coachName = null, bufferMinutes = 0, coachId 
         const lesson = {
             id: lessonIdCounter++,
             type: 'Private',
-            duration: adminSettings.timeInterval,
+            duration: 30, // Always start with 30 minutes minimum
             players: 1,
             ballLevel: '',
             description: ''
@@ -644,10 +659,10 @@ function selectTime(time, element, coachName = null, bufferMinutes = 0, coachId 
     updateAllCalculations();
 
     // Immediate validation feedback
-    const validation = validateLessonDuration();
-    if (validation.valid) {
-        showToast('success', 'Time Slot Selected', `Selected time slot with ${validation.availableTime} minutes available.`);
-    }
+    // const validation = validateLessonDuration();
+    // if (validation.valid) {
+    //     showToast('success', 'Time Slot Selected', `Selected time slot with ${validation.availableTime} minutes available.`);
+    // }
 }
 
 // Updated addNewLesson function with time validation
@@ -656,7 +671,7 @@ function addNewLesson() {
     const tempLesson = {
         id: lessonIdCounter,
         type: 'Private',
-        duration: adminSettings.timeInterval,
+        duration: 30, // Always start with 30 minutes minimum
         players: 1,
         ballLevel: '',
         description: ''
@@ -980,6 +995,14 @@ function onPlayerTypeChange(val) {
 
     // Update remove buttons visibility
     updateRemoveButtons();
+
+    // Update all calculations to reflect player type change
+    updateAllCalculations();
+
+    // Update summary if we're currently on the summary step
+    if (currentStep === 4) {
+        generateSummary();
+    }
 }
 
 function renderLessons() {
@@ -1119,8 +1142,9 @@ function generateDurationOptions(selectedDuration) {
     let options = '';
     const isFreeTrial = document.getElementById('playerType')?.value === 'FreeTrial';
     const maxDuration = isFreeTrial ? 60 : 120;
+    const minDuration = 30; // Always start from 30 minutes
 
-    for (let i = adminSettings.timeInterval; i <= maxDuration; i += adminSettings.timeInterval) {
+    for (let i = minDuration; i <= maxDuration; i += adminSettings.timeInterval) {
         const selected = i === selectedDuration ? 'selected' : '';
         options += `<option value="${i}" ${selected}>${i} minutes</option>`;
     }
@@ -1154,26 +1178,43 @@ function calculateLessonPrice(lesson) {
 
     switch (lesson.type) {
         case "Private":
-            // Base price + (duration increments * per duration cost)
-            const privateDurationIncrements = Math.ceil(lesson.duration / adminSettings.timeInterval);
-            price = rates.base + (rates.perDuration * (privateDurationIncrements - 1));
+            // Fixed pricing based on duration
+            const privatePricing = {
+                30: 65,
+                45: 85,
+                60: 105,
+                75: 125,
+                90: 145,
+                105: 165,
+                120: 185
+            };
+            price = privatePricing[lesson.duration] || 65;
             break;
 
         case "Semi-Private":
-            // Base price + (duration increments * per duration cost)
-            const semiPrivateDurationIncrements = Math.ceil(lesson.duration / adminSettings.timeInterval);
-            price = rates.base + (rates.perDuration * (semiPrivateDurationIncrements - 1));
+            // Fixed pricing based on duration
+            const semiPrivatePricing = {
+                30: 40,
+                45: 50,
+                60: 60,
+                75: 70,
+                90: 80,
+                105: 90,
+                120: 100
+            };
+            price = semiPrivatePricing[lesson.duration] || 40;
             break;
 
         case "Group":
-            // Base price for 3 players + additional cost for extra players
-            const extraPlayers = Math.max(0, lesson.players - 3);
-            price = rates.base + (extraPlayers * rates.perPlayer);
+            // Price per player based on duration
+            const groupPricePerPlayer = rates.perPlayer[lesson.duration] || rates.perPlayer[30];
+            price = groupPricePerPlayer * lesson.players;
             break;
 
         case "Cardio Tennis":
-            // $20 per player
-            price = rates.perPlayer * lesson.players;
+            // Price per player based on duration
+            const cardioPricePerPlayer = rates.perPlayer[lesson.duration] || rates.perPlayer[30];
+            price = cardioPricePerPlayer * lesson.players;
             break;
 
         default:
@@ -1447,7 +1488,7 @@ function generateDetailedBookingSummary() {
     // Booking Details
     summary += "BOOKING DETAILS\n";
     summary += "----------------\n";
-    summary += `Date: ${dateStr}\n`;
+        summary += `Date: ${dateStr}\n`;
     summary += `Time: ${formatTimeDisplay(selectedTime)}\n`;
     summary += `Duration: ${totalDuration} minutes\n`;
     if (!isFreeTrial) {

@@ -193,13 +193,13 @@
                 </div>
 
                 <!-- Time Validation Display -->
-                <div id="timeValidationDisplay" class="time-validation-display" style="display: none;">
-                    <div class="alert alert-info p-2">
-                        <i class="fas fa-clock"></i>
-                        <strong>Time Validation:</strong>
-                        <span id="timeValidationText">Available: 0 minutes | Used: 0 minutes | Remaining: 0 minutes</span>
-                    </div>
-                </div>
+{{--                <div id="timeValidationDisplay" class="time-validation-display" style="display: none;">--}}
+{{--                    <div class="alert alert-info p-2">--}}
+{{--                        <i class="fas fa-clock"></i>--}}
+{{--                        <strong>Time Validation:</strong>--}}
+{{--                        <span id="timeValidationText">Available: 0 minutes | Used: 0 minutes | Remaining: 0 minutes</span>--}}
+{{--                    </div>--}}
+{{--                </div>--}}
 
                 <!-- Lessons Section -->
                 <div class="lessons-section">

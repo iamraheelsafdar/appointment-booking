@@ -64,6 +64,9 @@
 
         <p>If you have any questions, feel free to reach out to us.</p>
 
+        <p><b>Need to cancel or edit your lessons?</b></p>
+        <p>Please call us at <b>0421361946</b> or email us at <b>info@homecourtadvantage.net</b> for any enquiries.</p>
+
         <p><b>Thank you,</b></p>
         <p><b>The Home Court Advantage Team</b></p>
     </div>

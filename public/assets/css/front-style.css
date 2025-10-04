@@ -298,6 +298,22 @@ body {
     align-self: center;
 }
 
+.time-slot.buffer-slot {
+    background-color: #e9ecef;
+    border-color: #6c757d;
+    color: #495057;
+    cursor: not-allowed;
+    align-self: center;
+}
+
+.time-slot.blocked-slot {
+    background-color: #fff3cd;
+    border-color: #ffc107;
+    color: #856404;
+    cursor: not-allowed;
+    align-self: center;
+}
+
 .coach-slots {
     display: flex;
     flex-wrap: wrap;
