@@ -163,6 +163,11 @@ function renderCalendar() {
     monthYear.textContent = `${months[month]} ${year}`;
     calendar.innerHTML = '';
 
+    // Calculate the maximum allowed date (5 weeks from today)
+    const today = new Date();
+    const maxDate = new Date();
+    maxDate.setDate(today.getDate() + 35); // 5 weeks = 35 days
+
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDay; i++) {
         const emptyDay = document.createElement('div');
@@ -173,12 +178,12 @@ function renderCalendar() {
     // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month, day);
-        const dateElement = createDateElement(date);
+        const dateElement = createDateElement(date, maxDate);
         calendar.appendChild(dateElement);
     }
 }
 
-function createDateElement(date) {
+function createDateElement(date, maxDate) {
     const dateElement = document.createElement('div');
     dateElement.className = 'calendar-date';
 
@@ -187,14 +192,13 @@ function createDateElement(date) {
     const dayOfWeek = date.getDay();
     const isAvailable = adminSettings.dailySchedule[dayOfWeek] !== undefined;
     const isPast = date < new Date().setHours(0, 0, 0, 0);
-
-
+    const isBeyond5Weeks = date > maxDate;
 
     if (!isCurrentMonth) {
         dateElement.classList.add('other-month');
     }
 
-    if (isPast || !isAvailable) {
+    if (isPast || !isAvailable || isBeyond5Weeks) {
         dateElement.classList.add('disabled');
     }
 
@@ -212,7 +216,7 @@ function createDateElement(date) {
         const indicator = document.createElement('div');
         indicator.className = 'availability-indicator';
 
-        if (isAvailable && !isPast) {
+        if (isAvailable && !isPast && !isBeyond5Weeks) {
             const dateStr = formatDate(date);
             const daySchedule = adminSettings.dailySchedule[dayOfWeek];
             let totalSlots = 0;
@@ -254,7 +258,7 @@ function createDateElement(date) {
             }
         } else {
             indicator.classList.add('unavailable');
-            if (isPast || !isAvailable) {
+            if (isPast || !isAvailable || isBeyond5Weeks) {
                 dateElement.classList.add('disabled');
             }
         }
@@ -262,8 +266,8 @@ function createDateElement(date) {
         dateElement.appendChild(indicator);
     }
 
-    // Add click handler
-    if (isCurrentMonth && !isPast && isAvailable && !dateElement.classList.contains('disabled')) {
+    // Add click handler - only enable if within 5 weeks, current month, not past, and available
+    if (isCurrentMonth && !isPast && isAvailable && !isBeyond5Weeks && !dateElement.classList.contains('disabled')) {
         dateElement.addEventListener('click', () => selectDate(date, dateElement));
     }
 
@@ -1703,8 +1707,20 @@ function previousMonth() {
 }
 
 function nextMonth() {
-    currentDate.setMonth(currentDate.getMonth() + 1);
-    renderCalendar();
+    const today = new Date();
+    const maxDate = new Date();
+    maxDate.setDate(today.getDate() + 35);
+
+    const nextMonthDate = new Date(currentDate);
+    nextMonthDate.setMonth(currentDate.getMonth() + 1);
+
+    // Only allow navigation if the next month doesn't go beyond 5 weeks from today
+    if (nextMonthDate <= maxDate) {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        renderCalendar();
+    } else {
+        showToast('info', 'Date Limit', 'Bookings are only available for the next 5 weeks.');
+    }
 }
 
 function goToToday() {
