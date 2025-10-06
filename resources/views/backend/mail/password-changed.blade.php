@@ -85,7 +85,7 @@
             </a>
         </p>
 
-        <p>For any assistance, reach out to us at <a href="mailto:support@homecourtadvantage.net">support@homecourtadvantage.net</a></p>
+        <p>For any assistance, reach out to us at <a href="mailto:info@homecourtadvantage.net">info@homecourtadvantage.net</a></p>
 
         <p><b>Thank you,</b></p>
         <p><b>The Home Court Advantage Team</b></p>

@@ -71,30 +71,29 @@
     </div>
     <div class="email-body">
         <p><b>Dear {{ $customerName }},</b></p>
-        
+
         <p>We regret to inform you that your appointment has been cancelled.</p>
-        
+
         <div class="booking-details">
             <h3>📋 Cancelled Appointment Details:</h3>
             <pre style="white-space: pre-wrap; font-family: Arial, sans-serif;">{{ $bookingDetails }}</pre>
         </div>
-        
+
         <p><b>What happens next?</b></p>
         <ul>
             <li>If you made a payment, you will receive a full refund within 3-5 business days</li>
             <li>You can book a new appointment at any time</li>
             <li>If you have any questions, please don't hesitate to contact us</li>
         </ul>
-        
+
         <div class="contact-info">
             <h4>📞 Need Help?</h4>
             <p>If you have any questions or concerns about this cancellation, please contact us:</p>
-            <p><b>Email:</b> support@homecourtadvantage.com<br>
-            <b>Phone:</b> (555) 123-4567</p>
+            <p>Please call us at <a href="tel:0421361946">0421361946</a> or email us at <a href="mailto:info@homecourtadvantage.net">info@homecourtadvantage.net</a> for any enquiries.</p>
         </div>
-        
+
         <p>We apologize for any inconvenience and look forward to serving you in the future.</p>
-        
+
         <p><b>Best regards,</b></p>
         <p><b>The Home Court Advantage Team</b></p>
     </div>

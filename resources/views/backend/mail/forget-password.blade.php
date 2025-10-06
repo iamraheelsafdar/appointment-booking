@@ -90,7 +90,7 @@
 
         <p>If you didn’t request a password reset, you can safely ignore this email. Your password will remain unchanged.</p>
 
-        <p>Need help? Contact us at <a href="mailto:support@homecourtadvantage.net">support@homecourtadvantage.net</a></p>
+        <p>Need help? Contact us at <a href="mailto:info@homecourtadvantage.net">info@homecourtadvantage.net</a></p>
 
         <p><b>Thanks,</b></p>
         <p><b>The Home Court Advantage Team</b></p>

@@ -75,7 +75,7 @@
     <div class="email-body">
         <p><b>Dear{{$name}}</b></p>
 
-        <p>We’re excited to welcome you as a coach on <b>Home Court Advantage</b>! 🏀</p>
+        <p>We’re excited to welcome you as a coach on <b>Home Court Advantage</b>! 🎾</p>
 
         <p>Your account has been successfully created by our team. To get started, you’ll need to set your password and
             log in to your coach dashboard.</p>
@@ -105,7 +105,7 @@
 
         <h4>Need Help?</h4>
         <p>If you have any questions or need support, feel free to contact us at <a
-                href="mailto:support@homecourtadvantage.net">support@homecourtadvantage.net</a></p>
+                href="mailto:info@homecourtadvantage.net">info@homecourtadvantage.net</a></p>
 
         <p>We’re thrilled to have you on board and can’t wait to see the value you bring to our community!</p>
 

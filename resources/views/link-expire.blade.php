@@ -27,7 +27,7 @@
 
                     <div class="lc-block">
                         <a class="btn btn-lg btn-secondary me-2" href="{{ route('login') }}">Back to Login</a>
-                        <a class="btn btn-outline-dark mt-2 mt-md-0" href="mailto:support@homecourtadvantage.net">Contact Support</a>
+                        <a class="btn btn-outline-dark mt-2 mt-md-0" href="mailto:info@homecourtadvantage.net">Contact Support</a>
                     </div>
                 </div>
             </div>

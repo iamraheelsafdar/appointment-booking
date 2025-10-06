@@ -1182,31 +1182,44 @@ function calculateLessonPrice(lesson) {
 
     switch (lesson.type) {
         case "Private":
-            // Fixed pricing based on duration
-            const privatePricing = {
-                30: 65,
-                45: 85,
-                60: 105,
-                75: 125,
-                90: 145,
-                105: 165,
-                120: 185
-            };
-            price = privatePricing[lesson.duration] || 65;
+            // Base 30-min price is $65, hourly rate is $105
+            const privateBase30Min = 65;
+            const privateHourlyRate = 105;
+
+            if (lesson.duration <= 60) {
+                // Fixed pricing for durations up to 60 minutes
+                const privatePricing = {
+                    30: 65,
+                    45: 85,
+                    60: 105
+                };
+                price = privatePricing[lesson.duration] || privateBase30Min;
+            } else {
+                // For more than 60 minutes, simply multiply hourly rate by hours
+                // Example: 1.5 hours = $105 × 1.5 = $157.50
+                const hours = lesson.duration / 60;
+                price = privateHourlyRate * hours;
+            }
             break;
 
         case "Semi-Private":
-            // Fixed pricing based on duration
-            const semiPrivatePricing = {
-                30: 40,
-                45: 50,
-                60: 60,
-                75: 70,
-                90: 80,
-                105: 90,
-                120: 100
-            };
-            price = semiPrivatePricing[lesson.duration] || 40;
+            // Base 30-min price is $40, hourly rate is $60
+            const semiPrivateBase30Min = 40;
+            const semiPrivateHourlyRate = 60;
+
+            if (lesson.duration <= 60) {
+                // Fixed pricing for durations up to 60 minutes
+                const semiPrivatePricing = {
+                    30: 40,
+                    45: 50,
+                    60: 60
+                };
+                price = semiPrivatePricing[lesson.duration] || semiPrivateBase30Min;
+            } else {
+                // For more than 60 minutes, simply multiply hourly rate by hours
+                const hours = lesson.duration / 60;
+                price = semiPrivateHourlyRate * hours;
+            }
             break;
 
         case "Group":
