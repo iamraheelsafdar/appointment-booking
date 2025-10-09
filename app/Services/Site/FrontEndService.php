@@ -181,8 +181,13 @@ class FrontEndService implements FrontEndInterface
                 $bookedSlots[$date][$coachId] = [];
             }
 
-            // Extend the time slot to include buffer minutes
-            $extendedTimeSlot = self::extendTimeSlotWithBuffer($timeSlot, $bufferMinutes);
+            // Calculate extra buffer for 4+ hour bookings
+            $totalLessonTime = $appointment->lessons()->sum('duration');
+            $extraBufferMinutes = $totalLessonTime >= 240 ? 30 : 0; // 4 hours = 240 minutes
+
+            // Extend the time slot to include buffer minutes (including extra buffer for 4+ hour bookings)
+            $totalBufferMinutes = $bufferMinutes + $extraBufferMinutes;
+            $extendedTimeSlot = self::extendTimeSlotWithBuffer($timeSlot, $totalBufferMinutes);
 
             // Store the extended time slot and customer info per coach
             $bookedSlots[$date][$coachId][] = [
@@ -234,7 +239,12 @@ class FrontEndService implements FrontEndInterface
                 $slots = Helper::extractTimeSlots($range, $siteSettings->buffer_minutes); // see helper below
                 $bookedSlots = array_merge($bookedSlots, $slots);
             }
-            $userSlots = Helper::extractTimeSlots($request->selectedTimeSlot, $siteSettings->buffer_minutes, $siteSettings->buffer_minutes);
+            // Calculate total lesson time to determine if extra buffer is needed
+            $totalLessonTime = collect($request->lessons)->sum('duration');
+            $extraBufferMinutes = $totalLessonTime >= 240 ? 30 : 0; // 4 hours = 240 minutes
+            $totalBufferMinutes = $siteSettings->buffer_minutes + $extraBufferMinutes;
+
+            $userSlots = Helper::extractTimeSlots($request->selectedTimeSlot, $totalBufferMinutes, $totalBufferMinutes);
             $overlap = array_intersect($bookedSlots, $userSlots);
             if (!empty($overlap)) {
                 return response()->json(['errors' => ['One or more slots are already booked.']], 422);
@@ -293,7 +303,7 @@ class FrontEndService implements FrontEndInterface
                     $availableTime = 60;
                 }
 
-                // Apply buffer minutes if specified
+                // Apply buffer minutes if specified (including extra buffer for 4+ hour bookings)
                 if (!empty($request->selectedBufferMinutes)) {
                     $availableTime = $availableTime - $request->selectedBufferMinutes;
                 }
@@ -335,17 +345,17 @@ class FrontEndService implements FrontEndInterface
                 }
             } else {
                 // Auto-assign coach if none selected
-                $coach = User::where('user_type', 'Coach')->where('coach_type', 'Normal Coach')
-                    ->whereHas('google')->where('status', 1)
-                    ->when(true, function ($query) {
-                        $query->whereDoesntHave('appointments', function ($q) {
-                            $q->whereDate('created_at', Carbon::today());
-                        });
-                    })
-                    ->inRandomOrder()->first() ??
-                    User::where('user_type', 'Coach')->where('coach_type', 'Normal Coach')->where('status', 1)->whereHas('google')
-                        ->inRandomOrder()
-                        ->first();
+            $coach = User::where('user_type', 'Coach')->where('coach_type', 'Normal Coach')
+                ->whereHas('google')->where('status', 1)
+                ->when(true, function ($query) {
+                    $query->whereDoesntHave('appointments', function ($q) {
+                        $q->whereDate('created_at', Carbon::today());
+                    });
+                })
+                ->inRandomOrder()->first() ??
+                User::where('user_type', 'Coach')->where('coach_type', 'Normal Coach')->where('status', 1)->whereHas('google')
+                    ->inRandomOrder()
+                    ->first();
 
                 // Check if this is a free trial player and validate duration limit (for auto-assigned coaches)
                 if ($request->playerType === 'FreeTrial') {
@@ -524,7 +534,7 @@ class FrontEndService implements FrontEndInterface
     public static function assignToGoogleCalender($user, $transaction)
     {
         try {
-            $client = Helper::getGoogleClientForUser($user);
+        $client = Helper::getGoogleClientForUser($user);
 
         // Check if client is a string (error message)
         if (is_string($client)) {
@@ -532,7 +542,7 @@ class FrontEndService implements FrontEndInterface
             return 'Google Calendar is not accessible. Please login to your calendar again.';
         }
 
-            $calendarService = new Google_Service_Calendar($client);
+        $calendarService = new Google_Service_Calendar($client);
 
         // Example: "8:00 AM - 8:30 AM, Mon, Aug 4, 2025"
         $slotString = $transaction->appointment->selected_time_slot;
@@ -649,7 +659,7 @@ class FrontEndService implements FrontEndInterface
             // Send emails
             \Log::info('Dispatching player email to: ' . $request->email);
             AppointmentBookingjob::dispatch($request->fullName, $request->email, $bookingDetails);
-
+            AppointmentReceivingjob::dispatch($appointment->coach->name, $appointment->coach->email, $bookingDetails);
             if ($admin) {
                 \Log::info('Dispatching admin email to: ' . $admin->email);
                 AppointmentReceivingjob::dispatch($admin->name, $admin->email, $bookingDetails);

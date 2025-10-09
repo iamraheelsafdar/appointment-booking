@@ -56,7 +56,7 @@
         New Booking Received
     </div>
     <div class="email-body">
-        <p><b>Hello Admin,</b></p>
+        <p><b>Hello {{$name ?? "There"}},</b></p>
 
         <p>You’ve received a new booking via Home Court Advantage. The details are as follows:</p>
 

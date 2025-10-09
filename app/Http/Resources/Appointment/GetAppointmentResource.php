@@ -27,7 +27,7 @@ class GetAppointmentResource extends JsonResource
             'state' => $this->state,
             'appointment_status' => $this->appointment_status,
             'total_minutes' => $this->total_minutes,
-            'total_amount' => $this->total_amount,
+            'total_amount' => $this->player_type == "FreeTrial" ? "0 : Free Trial" : $this->total_amount,
             'selected_date' => $this->selected_date,
             'selected_time_slot' => $this->selected_time_slot,
             'transaction' => $this->transaction,
