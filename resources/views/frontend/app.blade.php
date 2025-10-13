@@ -268,6 +268,7 @@
     window.coaches = @json($coaches);
     window.coachAvailability = @json($coachAvailability);
     window.adminGoogleConnected = @json($adminGoogleConnected);
+    window.termsUrl = "{{ env('TERM_URL', '#') }}";
 
     // Define initGoogleMaps function before Google Maps API loads
     function initGoogleMaps() {

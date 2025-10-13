@@ -37,7 +37,9 @@
                 <th>State</th>
                 <th>Appointment Status</th>
                 <th>Total Minutes</th>
-                <th>Total Amount</th>
+                @if(auth()->user()->user_type == 'Admin')
+                    <th>Total Amount</th>
+                @endif
                 <th>Selected Date</th>
                 <th>Selected Time Slot</th>
                 @if(auth()->user()->user_type == 'Admin')
@@ -67,7 +69,9 @@
                         </span>
                     </td>
                     <td>{{ $appointment['total_minutes'] }}</td>
+                    @if(auth()->user()->user_type == 'Admin')
                     <td>{{ $appointment['total_amount'] }}</td>
+                    @endif
                     <td>{{ $appointment['selected_date'] }}</td>
                     <td>{{ $appointment['selected_time_slot'] }}</td>
 

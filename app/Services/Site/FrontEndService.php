@@ -563,6 +563,15 @@ class FrontEndService implements FrontEndInterface
         $startDateTime = Carbon::parse("$date $startTime");
         $endDateTime = Carbon::parse("$date $endTime");
 
+        // Calculate extra buffer for 4+ hour bookings
+        $totalLessonTime = $transaction->appointment->lessons()->sum('duration');
+        $extraBufferMinutes = $totalLessonTime >= 240 ? 30 : 0; // 4 hours = 240 minutes
+        
+        // Add extra buffer to end time for Google Calendar
+        if ($extraBufferMinutes > 0) {
+            $endDateTime->addMinutes($extraBufferMinutes);
+        }
+
         // Create Google Calendar Event
         $event = new Google_Service_Calendar_Event([
             'summary' => 'Tennis Lesson - ' . $transaction->appointment->name,

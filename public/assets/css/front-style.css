@@ -1037,3 +1037,47 @@ body {
 #timeValidationText {
     font-weight: 500;
 }
+
+/* Terms and Conditions Checkbox */
+.summary-section .form-check {
+    margin-top: 20px;
+    padding: 16px;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.summary-section .form-check-label {
+    font-size: 14px;
+    color: #495057;
+    margin-left: 8px;
+    line-height: 1.6;
+}
+
+.summary-section .form-check-label a {
+    color: #06402b;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.summary-section .form-check-label a:hover {
+    color: #0a5837;
+    text-decoration: underline;
+}
+
+.summary-section .form-check-input {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    cursor: pointer;
+}
+
+.summary-section .form-check-input:checked {
+    background-color: #06402b;
+    border-color: #06402b;
+}
+
+.summary-section .form-check-input:focus {
+    box-shadow: 0 0 0 0.25rem rgba(6, 64, 43, 0.25);
+}

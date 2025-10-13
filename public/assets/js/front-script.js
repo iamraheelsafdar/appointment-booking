@@ -1468,6 +1468,15 @@ function generateSummary() {
             <p><strong>Duration:</strong> ${totalDuration} minutes</p>
             ${!isFreeTrial ? `<p><strong>Total Price:</strong> $${totalPrice}</p>` : '<p><strong>Total Price:</strong> <span class="text-success">FREE TRIAL</span></p>'}
         </div>
+
+        <div class="summary-section">
+            <div class="form-check">
+                <input type="checkbox" class="ms-1 form-check-input" id="termsCheckbox" required style="border-color: #000;">
+                <label class="form-check-label" for="termsCheckbox">
+                    I agree to <a href="${window.termsUrl || '#'}" target="_blank">terms & conditions</a> provided by the company. By providing my Details.
+                </label>
+            </div>
+        </div>
     `;
 
     summaryContainer.innerHTML = summaryHTML;
@@ -1546,6 +1555,13 @@ function refreshTimeValidation() {
 
 
 function submitBooking() {
+    // Check if terms and conditions are accepted
+    const termsCheckbox = document.getElementById('termsCheckbox');
+    if (!termsCheckbox || !termsCheckbox.checked) {
+        showToast('warning', 'Terms Required', 'Please accept the terms and conditions to proceed.');
+        return;
+    }
+
     // Calculate total minutes from lessons
     const totalMinutes = lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0);
 
